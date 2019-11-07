@@ -7,13 +7,16 @@
  */
 Smarty::Smarty(String _name, String _desc)
 {
-	LOGSTART();	
 	name = _name;
 	desc = _desc;
+
 	WiFi.hostname(name);
 	WiFi.mode(WIFI_STA);
+
 	ArduinoOTA.setHostname(name.c_str());
-	EEPROM_read();
+	ArduinoOTA.begin();
+
+	client.setTimeout(50);
 
 	// Event handlers:
 	mConnectHandler = WiFi.onStationModeConnected([this](const WiFiEventStationModeConnected& event) {
@@ -28,13 +31,21 @@ Smarty::Smarty(String _name, String _desc)
 	//////////////////
 }
 
+Smarty::Smarty(String _name, String _desc, const char * _ssid, const char * _pass, IPAddress _serverIP, uint16_t _port) : Smarty(_name, _desc) {
+	conn_status.hardcoded_data = true;
+	strcpy(conn_data.ssid, _ssid);
+	strcpy(conn_data.pass, _pass);
+	conn_data.serverIP = _serverIP;
+	conn_data.port = _port;
+}
+
 void Smarty::onConnect(const WiFiEventStationModeConnected& event) {
-	LOGf("WiFi connected\n");
+	LOGln("WiFi connected");
 }
 
 void Smarty::onDisconnect(const WiFiEventStationModeDisconnected& event) {
-	gotIP = false;
-	LOGf("WiFi disconnected\n");
+	conn_status.got_ip = false;
+	LOGln("WiFi disconnected");
 }
 
 void Smarty::onGotIP(const WiFiEventStationModeGotIP& event) {
@@ -49,12 +60,19 @@ void Smarty::onGotIP(const WiFiEventStationModeGotIP& event) {
 	jsonBuffer["header"] = WHERE_IS_SERVER;
 	send(true);
 
-	gotIP = true;
+	conn_status.got_ip = true;
 }
 
 void Smarty::begin() {
-	ArduinoOTA.begin();
-	LOGf("\nTrying to connect to WiFi network:\n\tWifi SSID: %s\n\tWifi Password: %s\n", conn_data.ssid, conn_data.pass);
+	LOGSTART();
+	LOGln();
+
+	if ( !conn_status.hardcoded_data )
+		EEPROM_read();
+
+	LOGf("Connection data:\n\tWifi SSID: %s\n\tWifi Password: %s\n\tServer IP: %s\n\tServer port: %d\n", \
+					conn_data.ssid, conn_data.pass, conn_data.serverIP.toString().c_str(), conn_data.port);
+	LOGln("Trying to connect to WiFi network");
 	WiFi.begin(conn_data.ssid, conn_data.pass);
 }
 
@@ -104,7 +122,7 @@ void Smarty::checkConnection() {
   	}
 	/////////////////////
 
-	if ( gotIP && !srvConnected ) {
+	if ( conn_status.got_ip && !conn_status.server_connected ) {
 		if ( tcpConnect() ) {
 			sendFullInfo();
 		}
@@ -132,7 +150,7 @@ bool Smarty::send(bool broadcast) {
 	}
 	else {
 		LOGf("Sending message to server: %s ...", _buf);
-		if ( srvConnected ) {
+		if ( conn_status.server_connected ) {
 			if ( client.write(_buf) ) {
 				LOGln("Success");
 				return true;
@@ -170,22 +188,25 @@ void Smarty::addParam(paramType_t _type, \
 		case SWITCH:
 			new_param->minValue = 0;
 			new_param->maxValue = 1;
+			new_param->divisor = 1;
 			break;
 
 		case RGB:
 			new_param->minValue = -32768;
 			new_param->maxValue = 32767;
+			new_param->divisor = 1;
+			break;
 
 		default:
 			new_param->minValue = _minValue;
 			new_param->maxValue = _maxValue;
+			new_param->divisor = _divisor;
 			break;
 	}
 	new_param->remember_target = _rem_target;
 	if ( _rem_target )
 		numRemValues++;
 	new_param->callback = _cb;
-	new_param->divisor = _divisor;
 
 	params.push_back(*new_param);
 
@@ -273,7 +294,7 @@ bool Smarty::tcpConnect() {
 		LOG("Trying to connect to server... ");
 		if ( client.connect(conn_data.serverIP, conn_data.port) ) {
 			LOGln("Connected");
-			srvConnected = true;
+			conn_status.server_connected = true;
 			return true;
 		}
 	}

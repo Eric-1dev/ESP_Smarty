@@ -24,6 +24,7 @@ class Smarty
 {
 	public:
 		Smarty(String, String);
+		Smarty(String, String, const char *, const char *, IPAddress, uint16_t);
 		void begin();
 		void checkConnection();
 		void addParam(paramType_t _type, \
@@ -42,6 +43,7 @@ class Smarty
 		String name;
 		String desc;
 		conn_data_t conn_data;
+		conn_status_t conn_status;
 		WiFiEventHandler mConnectHandler;
 		WiFiEventHandler mGotIPHandler;
 		WiFiEventHandler mDisconnectHandler;
@@ -49,11 +51,8 @@ class Smarty
 		WiFiClient client;
 		WiFiUDP Udp;
 		StaticJsonDocument<512> jsonBuffer;
-		bool srvConnected = false;	// Connection to server flag
 		std::vector<Param> params;
 		uint8_t numRemValues = 0;	// Number of remembered taget values
-
-		bool gotIP = false;
 
 		void EEPROM_write(conn_data_t*);
 		void EEPROM_read();
