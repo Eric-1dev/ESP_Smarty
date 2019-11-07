@@ -7,6 +7,13 @@
 #define MY_PARAMS               "so what i can do"
 #define NEW_VALUE               "look, my value has changed"
 
+struct conn_data_t {
+	char ssid[32];
+	char pass[64];
+  uint8_t serverIP[4];
+  uint16_t port;
+};
+
 enum paramType_t {
   SWITCH,
   RGB,

@@ -38,7 +38,7 @@ void Smarty::onDisconnect(const WiFiEventStationModeDisconnected& event) {
 }
 
 void Smarty::onGotIP(const WiFiEventStationModeGotIP& event) {
-	Udp.begin(UDP_PORT);
+	Udp.begin(conn_data.port);
 
 	bcastAddr = (event.ip.v4() & event.mask.v4()) | ~event.mask.v4();
 	LOGf("Got IP: %s\n", event.ip.toString().c_str());
@@ -124,7 +124,7 @@ bool Smarty::send(bool broadcast) {
 
 	if ( broadcast ) {
 		LOGf("Sending broadcast message: %s ...", _buf);
-		Udp.beginPacket(bcastAddr, TCP_PORT);
+		Udp.beginPacket(bcastAddr, conn_data.port);
 		Udp.write(_buf);
 		Udp.endPacket();
 		LOGln("Success");
@@ -271,7 +271,7 @@ void Smarty::sendParam(uint8_t _num) {
 bool Smarty::tcpConnect() {
 	if (WiFi.status() == WL_CONNECTED && WiFi.localIP()) {
 		LOG("Trying to connect to server... ");
-		if ( client.connect("192.168.1.162", TCP_PORT) ) {
+		if ( client.connect(conn_data.serverIP, conn_data.port) ) {
 			LOGln("Connected");
 			srvConnected = true;
 			return true;

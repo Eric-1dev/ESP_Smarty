@@ -20,11 +20,6 @@
 	#define LOGln
 #endif
 
-struct conn_data_t {
-	char ssid[32];
-	char pass[64];
-};
-
 class Smarty
 {
 	public:
