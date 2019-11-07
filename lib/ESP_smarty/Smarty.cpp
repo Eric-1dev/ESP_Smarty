@@ -9,6 +9,9 @@ Smarty::Smarty(String _name, String _desc)
 {
 	name = _name;
 	desc = _desc;
+	conn_status.wifi_connected = false;
+	conn_status.server_connected = false;
+	conn_status.got_ip = false;
 
 	WiFi.hostname(name);
 	WiFi.mode(WIFI_STA);
@@ -149,12 +152,18 @@ bool Smarty::send(bool broadcast) {
 		return true;
 	}
 	else {
-		LOGf("Sending message to server: %s ...", _buf);
+		LOGf("Sending message to server: %s ... ", _buf);
 		if ( conn_status.server_connected ) {
 			if ( client.write(_buf) ) {
 				LOGln("Success");
 				return true;
 			}
+			else {
+				conn_status.server_connected = false;
+			}
+		}
+		else {
+			LOG("not connected to server ... ");
 		}
 	}
 	LOGln("Failed");

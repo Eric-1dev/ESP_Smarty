@@ -9,8 +9,10 @@
 #define POWER_PIN D0
 
 void f1(param_value_t val) {
-  LOGln("shit");
+  LOGln("He is call me!");
 }
+
+int i=0;
 
 Smarty smarty("Kitchen_light", \
               "Управляет освещением над столешницей и в цоколе кухни.", \
@@ -21,13 +23,17 @@ Smarty smarty("Kitchen_light", \
               );
 
 void setup (void) {
-  smarty.addParam(SWITCH, "Типа чё-то как-то делает", 0, 0, false, f1);
+  smarty.addParam(SWITCH, "Включает подсветку столешницы", 0, 0, false, f1);
+  smarty.addParam(RGB, "Включает RGB подсветку цоколя", 0, 0, false, NULL);
   smarty.begin();
 }
 
 void loop (void) {
   smarty.checkConnection();
-  //smarty.setValue(0, 12);
+
+  if ( i++ > 2 )
+    smarty.setValue(0, 12);
+
   delay(1000);
   yield();
 }
