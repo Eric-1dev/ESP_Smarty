@@ -21,7 +21,7 @@ void setup (void) {
 
 void loop (void) {
   smarty.checkConnection();
-  //smarty.setValue(0, 12);
+  smarty.setValue(0, 12);
   delay(1000);
   yield();
 }
