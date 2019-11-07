@@ -4,3 +4,4 @@
 .vscode/launch.json
 .vscode/ipch
 lib\ESP_smarty\config.h
+.vscode
