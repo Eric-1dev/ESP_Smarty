@@ -12,6 +12,12 @@ Smarty::Smarty(String _name, String _desc)
 	conn_status.wifi_connected = false;
 	conn_status.server_connected = false;
 	conn_status.got_ip = false;
+	conn_status.getConnDataFlag = false;
+
+	strcpy(esp_ap_data.ssid, ESP_AP_SSID);
+	strcpy(esp_ap_data.pass, ESP_AP_PASS);
+	esp_ap_data.serverIP = IPAddress(ESP_SERVER_IP);
+	esp_ap_data.port = ESP_SERVER_PORT;
 
 	WiFi.hostname(name);
 	WiFi.mode(WIFI_STA);
@@ -58,8 +64,13 @@ void Smarty::onConnect(const WiFiEventStationModeConnected& event) {
 
 void Smarty::onDisconnect(const WiFiEventStationModeDisconnected& event) {
 	conn_status.got_ip = false;
+	conn_status.server_connected = false;
 	conn_status.disconnect_counter++;
 	LOGf("WiFi disconnected ... count = %d\n", conn_status.disconnect_counter);
+	if ( conn_status.disconnect_counter > 4 ) {
+		conn_status.disconnect_counter = 0;
+		getNewConnData();
+	}
 }
 
 void Smarty::onGotIP(const WiFiEventStationModeGotIP& event) {
@@ -71,14 +82,20 @@ void Smarty::onGotIP(const WiFiEventStationModeGotIP& event) {
 	LOGf("Got GATEWAY: %s\n", event.gw.toString().c_str());
 	LOGf("Got BROADCAST ADDR: %s\n", bcastAddr.toString().c_str());
 
-	jsonBuffer["header"] = WHERE_IS_SERVER;
-	send(true);
-
 	conn_status.got_ip = true;
+
+	if ( !conn_status.getConnDataFlag && conn_data.serverIP == IPAddress(0, 0, 0, 0) ) {
+		jsonBuffer["header"] = WHERE_IS_SERVER;
+		send(true);
+	}
 }
 
+/**
+ * Start WiFi
+ * Run this function after all parameter add
+ */
 void Smarty::begin() {
-	LOGSTART();
+	LOGSTART;
 	LOGln();
 
 	if ( !conn_status.hardcoded_data )
@@ -119,25 +136,34 @@ void Smarty::EEPROM_read() {
  * Run this function periodically from loop()
  */
 void Smarty::checkConnection() {
-	ArduinoOTA.handle();
+	if ( !conn_status.getConnDataFlag ) {
+		ArduinoOTA.handle();
 
-	// Check UDP messages
-	char _buf[BUF_SIZE];
-	int packetSize = Udp.parsePacket();
-	if (packetSize) {
-		int len = Udp.read(_buf, sizeof(_buf)-1);
-		if (len > 0) {
-			_buf[len] = '\0';
+		// Check UDP messages
+		char _buf[BUF_SIZE];
+		int packetSize = Udp.parsePacket();
+		if (packetSize) {
+			int len = Udp.read(_buf, sizeof(_buf)-1);
+			if (len > 0) {
+				_buf[len] = '\0';
+			}
+			IPAddress remoteIp = Udp.remoteIP();
+			LOGf("Received packet of size %d from %s, port %d\n\tContents: ", packetSize, remoteIp.toString().c_str(), Udp.remotePort());
+			LOGln(_buf);
 		}
-		IPAddress remoteIp = Udp.remoteIP();
-		LOGf("Received packet of size %d from %s, port %d\n\tContents: ", packetSize, remoteIp.toString().c_str(), Udp.remotePort());
-		LOGln(_buf);
-  	}
-	/////////////////////
+		/////////////////////
 
-	if ( conn_status.got_ip && !conn_status.server_connected ) {
-		if ( tcpConnect() ) {
-			sendFullInfo();
+		if ( conn_status.got_ip && !conn_status.server_connected ) {
+			if ( tcpConnect(conn_data.serverIP, conn_data.port) ) {
+				sendFullInfo();
+			}
+		}
+	}
+	else {
+		if ( conn_status.got_ip && !conn_status.server_connected ) {
+			if ( tcpConnect(esp_ap_data.serverIP, esp_ap_data.port) ) {
+				ackConnData();
+			}
 		}
 	}
 }
@@ -312,10 +338,10 @@ void Smarty::sendParam(uint8_t _num) {
 	send();
 }
 
-bool Smarty::tcpConnect() {
+bool Smarty::tcpConnect(IPAddress _server, uint16_t _port) {
 	if (WiFi.status() == WL_CONNECTED && WiFi.localIP()) {
 		LOG("Trying to connect to server... ");
-		if ( client.connect(conn_data.serverIP, conn_data.port) ) {
+		if ( client.connect(_server, _port) ) {
 			LOGln("Connected");
 			conn_status.server_connected = true;
 			conn_status.disconnect_counter = 0;
@@ -325,4 +351,16 @@ bool Smarty::tcpConnect() {
 	conn_status.disconnect_counter++;
 	LOGf("Failed ... counter = %d\n", conn_status.disconnect_counter);
 	return false;
+}
+
+void Smarty::getNewConnData() {
+	conn_status.getConnDataFlag = true;
+	WiFi.disconnect();
+	WiFi.begin(ESP_AP_SSID, ESP_AP_PASS);
+}
+
+void Smarty::ackConnData() {
+	jsonBuffer["header"] = GIVE_ME_DATA;
+	jsonBuffer["mac"] = WiFi.macAddress();
+	send();
 }

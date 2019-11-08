@@ -9,12 +9,12 @@
 #include "config.h"
 
 #ifdef DEBUG
-	#define LOGSTART() Serial.begin(115200);
+	#define LOGSTART Serial.begin(115200);
 	#define LOG Serial.print
     #define LOGf Serial.printf
 	#define LOGln Serial.println
 #else
-	#define LOGSTART(x)
+	#define LOGSTART
 	#define LOG(x)
     #define LOGf(x, ...)
 	#define LOGln(x)
@@ -43,6 +43,7 @@ class Smarty
 		String name;
 		String desc;
 		conn_data_t conn_data;
+		conn_data_t esp_ap_data;
 		conn_status_t conn_status;
 		WiFiEventHandler mConnectHandler;
 		WiFiEventHandler mGotIPHandler;
@@ -63,7 +64,9 @@ class Smarty
 		bool receivedVal(uint8_t _num, param_value_t _value);
 		void sendFullInfo();
 		void sendParam(uint8_t _num);
-		bool tcpConnect();
+		bool tcpConnect(IPAddress, uint16_t);
+		void getNewConnData();
+		void ackConnData();
 };
 
 #endif
