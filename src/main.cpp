@@ -12,8 +12,6 @@ void f1(param_value_t val) {
   LOGln("He is call me!");
 }
 
-int i=0;
-
 Smarty smarty("Kitchen_light", \
               "Управляет освещением над столешницей и в цоколе кухни.", \
               "Eric's AP 2.4G", \
@@ -31,8 +29,7 @@ void setup (void) {
 void loop (void) {
   smarty.checkConnection();
 
-  if ( i++ > 2 )
-    smarty.setValue(0, 12);
+  smarty.setValue(0, 12);
 
   delay(1000);
   yield();
