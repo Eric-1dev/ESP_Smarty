@@ -35,7 +35,7 @@ class Smarty
 					  void (*_cb)(param_value_t) = NULL, \
 					  int8_t _divisor = 1);
 		param_value_t getTargetVal(uint8_t _num);
-		void setValue(uint8_t _num, param_value_t _value);
+		bool setValue(uint8_t _num, param_value_t _value);
 
 	private:
 		const char *baseApSSID = ESP_AP_SSID;
@@ -60,7 +60,7 @@ class Smarty
 		void onDisconnect(const WiFiEventStationModeDisconnected&);
 		void onGotIP(const WiFiEventStationModeGotIP&);
 		bool send(bool broadcast = false);
-		void receivedVal(uint8_t _num, param_value_t _value);
+		bool receivedVal(uint8_t _num, param_value_t _value);
 		void sendFullInfo();
 		void sendParam(uint8_t _num);
 		bool tcpConnect();

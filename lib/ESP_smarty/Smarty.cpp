@@ -227,7 +227,7 @@ void Smarty::addParam(paramType_t _type, \
  * @param _num - number of parameter
  * @param _value - new target value
  */
-void Smarty::receivedVal(uint8_t _num, param_value_t _value) {
+bool Smarty::receivedVal(uint8_t _num, param_value_t _value) {
 	if ( _num < params.size() ) {
 		if ( params[_num].targetValue != _value ) {
 			if ( params[_num].remember_target ) {
@@ -236,10 +236,10 @@ void Smarty::receivedVal(uint8_t _num, param_value_t _value) {
 			params[_num].targetValue = _value;
 			params[_num].callback(_value);
 		}
-		return;
+		return true;
 	}
 	LOGln("Parameter not exist");
-	exit(0);
+	return false;
 }
 
 /**
@@ -251,7 +251,7 @@ param_value_t Smarty::getTargetVal(uint8_t _num) {
 	if ( _num < params.size() )
 		return params[_num].targetValue;
 	LOGln("Parameter not exist");
-	exit(0);
+	return -32768;
 }
 
 /**
@@ -259,14 +259,14 @@ param_value_t Smarty::getTargetVal(uint8_t _num) {
  * @param _num - number of parameter
  * @param _value - new current value
  */
-void Smarty::setValue(uint8_t _num, param_value_t _value) {
+bool Smarty::setValue(uint8_t _num, param_value_t _value) {
 	if ( _num < params.size() ) {
 		params[_num].curValue = _value;
 		sendParam(_num);
-		return;
+		return true;
 	}
 	LOGln("Parameter not exist");
-	exit(0);
+	return false;
 }
 
 void Smarty::sendFullInfo() {
