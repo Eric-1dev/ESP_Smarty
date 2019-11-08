@@ -34,6 +34,15 @@ Smarty::Smarty(String _name, String _desc)
 	//////////////////
 }
 
+/**
+ * Constructor that used for hardcoded wifi & server settings
+ * @param _name - name of ESP
+ * @param _desk - short description
+ * @param _ssid - ssid of your home WiFi
+ * @param _pass - password of your WiFi
+ * @param _serverIP - IP-address of your server
+ * @param _port - port, that you select to TCP & UDP protocols
+ */
 Smarty::Smarty(String _name, String _desc, const char * _ssid, const char * _pass, IPAddress _serverIP, uint16_t _port) : Smarty(_name, _desc) {
 	conn_status.hardcoded_data = true;
 	strcpy(conn_data.ssid, _ssid);
@@ -121,8 +130,7 @@ void Smarty::checkConnection() {
 			_buf[len] = '\0';
 		}
 		IPAddress remoteIp = Udp.remoteIP();
-		LOGf("Received packet of size %d from %s, port %d\n", packetSize, remoteIp.toString().c_str(), Udp.remotePort());
-		LOGf("\tContents: ");
+		LOGf("Received packet of size %d from %s, port %d\n\tContents: ", packetSize, remoteIp.toString().c_str(), Udp.remotePort());
 		LOGln(_buf);
   	}
 	/////////////////////

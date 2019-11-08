@@ -14,7 +14,7 @@
     #define LOGf Serial.printf
 	#define LOGln Serial.println
 #else
-	#define LOGSTART()
+	#define LOGSTART(x)
 	#define LOG(x)
     #define LOGf(x, ...)
 	#define LOGln(x)
