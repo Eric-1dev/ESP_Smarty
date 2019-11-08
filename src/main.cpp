@@ -12,13 +12,16 @@ void f1(param_value_t val) {
   LOGln("He is call me!");
 }
 
-Smarty smarty("Kitchen_light", \
+/*Smarty smarty("Kitchen_light", \
               "Управляет освещением над столешницей и в цоколе кухни.", \
               "Eric's AP 2.4G", \
               "19881989", \
               IPAddress(192, 168, 1, 162), \
               3333 \
               );
+*/
+
+Smarty smarty("Kitchen_light", "Управляет освещением над столешницей и в цоколе кухни.");
 
 void setup (void) {
   smarty.addParam(SWITCH, "Включает подсветку столешницы", 0, 0, false, f1);
@@ -29,7 +32,7 @@ void setup (void) {
 void loop (void) {
   smarty.checkConnection();
 
-  smarty.setValue(0, 12);
+  //smarty.setValue(0, 12);
 
   delay(1000);
   yield();

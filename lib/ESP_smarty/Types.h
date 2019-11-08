@@ -18,7 +18,7 @@ enum paramType_t {
 typedef struct {
 	char ssid[32];
 	char pass[64];
-  IPAddress serverIP;
+  uint8_t serverIP[4];
   uint16_t port;
 } conn_data_t;
 

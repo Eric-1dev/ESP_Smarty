@@ -43,7 +43,6 @@ class Smarty
 		String name;
 		String desc;
 		conn_data_t conn_data;
-		conn_data_t esp_ap_data;
 		conn_status_t conn_status;
 		WiFiEventHandler mConnectHandler;
 		WiFiEventHandler mGotIPHandler;
