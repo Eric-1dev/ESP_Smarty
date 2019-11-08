@@ -15,9 +15,9 @@
 	#define LOGln Serial.println
 #else
 	#define LOGSTART()
-	#define LOG
-    #define LOGf
-	#define LOGln
+	#define LOG(x)
+    #define LOGf(x, ...)
+	#define LOGln(x)
 #endif
 
 class Smarty

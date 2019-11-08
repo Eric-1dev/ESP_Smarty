@@ -43,12 +43,14 @@ Smarty::Smarty(String _name, String _desc, const char * _ssid, const char * _pas
 }
 
 void Smarty::onConnect(const WiFiEventStationModeConnected& event) {
+	conn_status.disconnect_counter = 0;
 	LOGln("WiFi connected");
 }
 
 void Smarty::onDisconnect(const WiFiEventStationModeDisconnected& event) {
 	conn_status.got_ip = false;
-	LOGln("WiFi disconnected");
+	conn_status.disconnect_counter++;
+	LOGf("WiFi disconnected ... count = %d\n", conn_status.disconnect_counter);
 }
 
 void Smarty::onGotIP(const WiFiEventStationModeGotIP& event) {
@@ -308,9 +310,11 @@ bool Smarty::tcpConnect() {
 		if ( client.connect(conn_data.serverIP, conn_data.port) ) {
 			LOGln("Connected");
 			conn_status.server_connected = true;
+			conn_status.disconnect_counter = 0;
 			return true;
 		}
 	}
-	LOGln("Failed");
+	conn_status.disconnect_counter++;
+	LOGf("Failed ... counter = %d\n", conn_status.disconnect_counter);
 	return false;
 }
