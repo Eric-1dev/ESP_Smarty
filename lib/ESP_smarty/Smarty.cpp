@@ -69,7 +69,16 @@ void Smarty::onDisconnect(const WiFiEventStationModeDisconnected& event) {
 	LOGf("WiFi disconnected ... count = %d\n", conn_status.disconnect_counter);
 	if ( conn_status.disconnect_counter > 4 ) {
 		conn_status.disconnect_counter = 0;
-		getNewConnData();
+		conn_status.getConnDataFlag = !conn_status.getConnDataFlag;
+		if ( conn_status.getConnDataFlag ) {
+			LOGf("Trying to connect to ESP AP:\n\tSSID: %s\n\tPass: %s\n", ESP_AP_SSID, ESP_AP_PASS);
+			WiFi.begin(ESP_AP_SSID, ESP_AP_PASS);
+		}
+		else {
+			LOGf("Trying to connect to WiFi normally:\n\tSSID: %s\n\tPass: %s\n", conn_data.ssid, conn_data.pass);
+			WiFi.begin(conn_data.ssid, conn_data.pass);
+		}
+		
 	}
 }
 
@@ -152,19 +161,9 @@ void Smarty::checkConnection() {
 			LOGln(_buf);
 		}
 		/////////////////////
-
-		if ( conn_status.got_ip && !conn_status.server_connected ) {
-			if ( tcpConnect(conn_data.serverIP, conn_data.port) ) {
-				sendFullInfo();
-			}
-		}
 	}
-	else {
-		if ( conn_status.got_ip && !conn_status.server_connected ) {
-			if ( tcpConnect(esp_ap_data.serverIP, esp_ap_data.port) ) {
-				ackConnData();
-			}
-		}
+	if ( conn_status.got_ip && !conn_status.server_connected ) {
+		tcpConnect();
 	}
 }
 
@@ -331,6 +330,8 @@ void Smarty::sendFullInfo() {
  * @param _num - number of parameter
  */
 void Smarty::sendParam(uint8_t _num) {
+	if ( conn_status.getConnDataFlag )
+		return;
 	jsonBuffer["header"] = NEW_VALUE;
 	jsonBuffer["mac"] = WiFi.macAddress();
 	jsonBuffer["param"] = _num;
@@ -338,28 +339,45 @@ void Smarty::sendParam(uint8_t _num) {
 	send();
 }
 
-bool Smarty::tcpConnect(IPAddress _server, uint16_t _port) {
+bool Smarty::tcpConnect() {
 	if (WiFi.status() == WL_CONNECTED && WiFi.localIP()) {
-		LOG("Trying to connect to server... ");
-		if ( client.connect(_server, _port) ) {
-			LOGln("Connected");
-			conn_status.server_connected = true;
-			conn_status.disconnect_counter = 0;
-			return true;
+		if ( conn_status.getConnDataFlag ) {
+			LOGf("Trying to connect to ESP AP server %s, port %d\n", (const char *)ESP_SERVER_IP, ESP_SERVER_PORT);
+			if ( client.connect(conn_data.serverIP, conn_data.port) ) {
+				LOGln("Connected");
+				conn_status.server_connected = true;
+				conn_status.disconnect_counter = 0;
+				askConnData();
+				return true;
+			}
+			else
+				conn_status.disconnect_counter++;
+		}
+		else {
+			LOGf("Trying to connect to Smarty server %s, port %d\n", conn_data.serverIP.toString().c_str(), conn_data.port);
+			if ( client.connect(conn_data.serverIP, conn_data.port) ) {
+				LOGln("Connected");
+				conn_status.server_connected = true;
+				conn_status.disconnect_counter = 0;
+				sendFullInfo();
+				return true;
+			}
+			else
+				conn_status.disconnect_counter++;
 		}
 	}
-	conn_status.disconnect_counter++;
+	if ( conn_status.disconnect_counter > 4 ) {
+		conn_status.disconnect_counter = 0;
+		conn_status.getConnDataFlag = !conn_status.getConnDataFlag;
+		WiFi.disconnect();
+	}
+
 	LOGf("Failed ... counter = %d\n", conn_status.disconnect_counter);
 	return false;
 }
 
-void Smarty::getNewConnData() {
-	conn_status.getConnDataFlag = true;
-	WiFi.disconnect();
-	WiFi.begin(ESP_AP_SSID, ESP_AP_PASS);
-}
-
-void Smarty::ackConnData() {
+void Smarty::askConnData() {
+	LOGln("Asking new WiFi & Server data");
 	jsonBuffer["header"] = GIVE_ME_DATA;
 	jsonBuffer["mac"] = WiFi.macAddress();
 	send();

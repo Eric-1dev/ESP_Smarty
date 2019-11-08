@@ -64,9 +64,8 @@ class Smarty
 		bool receivedVal(uint8_t _num, param_value_t _value);
 		void sendFullInfo();
 		void sendParam(uint8_t _num);
-		bool tcpConnect(IPAddress, uint16_t);
-		void getNewConnData();
-		void ackConnData();
+		bool tcpConnect();
+		void askConnData();
 };
 
 #endif
