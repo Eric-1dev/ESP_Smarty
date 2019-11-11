@@ -69,7 +69,7 @@ Smarty::Smarty(String _name, String _desc, const char * _ssid, const char * _pas
 }
 
 void Smarty::onConnect(const WiFiEventStationModeConnected& event) {
-	conn_status.triesleft = 4;
+	conn_status.triesleft = SERVER_RECONNECT_TRIES;
 	LOGln("WiFi connected");
 }
 
@@ -368,8 +368,10 @@ bool Smarty::tcpConnect() {
 				askConnData();
 				return true;
 			}
-			else
+			else {
 				conn_status.triesleft--;
+				LOGf("Failed ... tries = %d\n", conn_status.triesleft);
+			}
 		}
 		else {
 			if ( millis() - lastDisconnectTime > SERVER_RECONNECT_INTERVAL ) {
@@ -382,13 +384,13 @@ bool Smarty::tcpConnect() {
 					sendFullInfo();
 					return true;
 				}
-				else
+				else {
 					conn_status.triesleft--;
+					LOGf("Failed ... counter = %d\n", conn_status.triesleft);
+				}
 			}
 		}
 	}
-
-	//LOGf("Failed ... counter = %d\n", conn_status.triesleft);
 
 	if ( !conn_status.triesleft ) {
 		if ( !conn_status.hardcoded_data && !isESPBase )
