@@ -36,6 +36,11 @@ class Smarty
 					  int8_t _divisor = 1);
 		param_value_t getTargetVal(uint8_t _num);
 		bool setValue(uint8_t _num, param_value_t _value);
+		void EEPROM_write(conn_data_t*);
+		char* getSSID();
+		char* getPASS();
+		IPAddress getServerIP();
+		uint16_t getPort();
 
 	private:
 		const char *baseApSSID = ESP_AP_SSID;
@@ -53,8 +58,8 @@ class Smarty
 		StaticJsonDocument<512> jsonBuffer;
 		std::vector<Param> params;
 		uint8_t numRemValues = 0;	// Number of remembered taget values
+		bool isESPBase = false;
 
-		void EEPROM_write(conn_data_t*);
 		void EEPROM_read();
 		void onConnect(const WiFiEventStationModeConnected&);
 		void onDisconnect(const WiFiEventStationModeDisconnected&);

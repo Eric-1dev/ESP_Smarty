@@ -7,6 +7,9 @@
  */
 Smarty::Smarty(String _name, String _desc)
 {
+	LOGSTART;
+	LOGln();
+
 	name = _name;
 	desc = _desc;
 	conn_status.wifi_connected = false;
@@ -15,12 +18,22 @@ Smarty::Smarty(String _name, String _desc)
 	conn_status.getConnDataFlag = false;
 
 	WiFi.hostname(name);
-	WiFi.mode(WIFI_STA);
+	if ( strcmp(name.c_str(), ESP_BASE_NAME) != 0 ) {
+		LOGln("Regular stantion mode enabled");
+		WiFi.mode(WIFI_STA);
+	}
+	else {
+		LOGln("Base ESP AP mode enabled");
+		isESPBase = true;
+		//WiFi.mode(WIFI_AP_STA);
+		WiFi.softAPConfig(IPAddress(ESP_SERVER_IP), IPAddress(ESP_SERVER_IP), IPAddress(255,255,255,0));
+  		WiFi.softAP(ESP_AP_SSID, ESP_AP_PASS);
+	}
 
 	ArduinoOTA.setHostname(name.c_str());
 	ArduinoOTA.begin();
 
-	client.setTimeout(50);
+	client.setTimeout(100);
 
 	// Event handlers:
 	mConnectHandler = WiFi.onStationModeConnected([this](const WiFiEventStationModeConnected& event) {
@@ -67,15 +80,16 @@ void Smarty::onDisconnect(const WiFiEventStationModeDisconnected& event) {
 	LOGf("WiFi disconnected ... count = %d\n", conn_status.disconnect_counter);
 	if ( conn_status.disconnect_counter > 4 ) {
 		conn_status.disconnect_counter = 0;
-		if ( !conn_status.hardcoded_data )
+		if ( !conn_status.hardcoded_data && !isESPBase ) {
 			conn_status.getConnDataFlag = !conn_status.getConnDataFlag;
-		if ( conn_status.getConnDataFlag ) {
-			LOGf("Trying to connect to ESP AP:\n\tSSID: %s\n\tPass: %s\n", ESP_AP_SSID, ESP_AP_PASS);
-			WiFi.begin(ESP_AP_SSID, ESP_AP_PASS);
-		}
-		else {
-			LOGf("Trying to connect to WiFi normally:\n\tSSID: %s\n\tPass: %s\n", conn_data.ssid, conn_data.pass);
-			WiFi.begin(conn_data.ssid, conn_data.pass);
+			if ( conn_status.getConnDataFlag ) {
+				LOGf("Trying to connect to ESP AP:\n\tSSID: %s\n\tPass: %s\n", ESP_AP_SSID, ESP_AP_PASS);
+				WiFi.begin(ESP_AP_SSID, ESP_AP_PASS);
+			}
+			else {
+				LOGf("Trying to connect to WiFi normally:\n\tSSID: %s\n\tPass: %s\n", conn_data.ssid, conn_data.pass);
+				WiFi.begin(conn_data.ssid, conn_data.pass);
+			}
 		}
 	}
 }
@@ -102,10 +116,8 @@ void Smarty::onGotIP(const WiFiEventStationModeGotIP& event) {
  * Run this function after all parameter add
  */
 void Smarty::begin() {
-	LOGSTART;
-	LOGln();
 
-	if ( !conn_status.hardcoded_data )
+	if ( !conn_status.hardcoded_data || isESPBase )
 		EEPROM_read();
 
 	LOGf("Connection data from EEPROM:\n\tWifi SSID: %s\n\tWifi Password: %s\n\tServer IP: %s\n\tServer port: %d\n", \
@@ -377,7 +389,7 @@ bool Smarty::tcpConnect() {
 
 	if ( conn_status.disconnect_counter > 4 ) {
 		conn_status.disconnect_counter = 0;
-		if ( !conn_status.hardcoded_data )
+		if ( !conn_status.hardcoded_data && !isESPBase )
 			conn_status.getConnDataFlag = !conn_status.getConnDataFlag;
 		WiFi.reconnect();
 	}
@@ -390,4 +402,20 @@ void Smarty::askConnData() {
 	jsonBuffer["header"] = GIVE_ME_DATA;
 	jsonBuffer["mac"] = WiFi.macAddress();
 	send();
+}
+
+char* Smarty::getSSID() {
+	return conn_data.ssid;
+}
+
+char* Smarty::getPASS() {
+	return conn_data.pass;
+}
+
+IPAddress Smarty::getServerIP() {
+	return IPAddress(conn_data.serverIP);
+}
+
+uint16_t Smarty::getPort() {
+	return conn_data.port;
 }
