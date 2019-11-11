@@ -74,6 +74,7 @@ void loop (void) {
   }
 
   yield();
+  //delay(400);
 }
 
 void handleRoot() {

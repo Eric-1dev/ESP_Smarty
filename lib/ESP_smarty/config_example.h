@@ -15,6 +15,7 @@
 #define ESP_SERVER_IP		192,168,100,1
 #define ESP_SERVER_PORT		9999
 #define TIME_ZONE           4
+#define RECONNECT_INTERVAL  10000                       // (ms)
 
 
 #endif

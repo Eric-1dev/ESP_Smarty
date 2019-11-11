@@ -12,7 +12,6 @@ Smarty::Smarty(String _name, String _desc)
 
 	name = _name;
 	desc = _desc;
-	conn_status.wifi_connected = false;
 	conn_status.server_connected = false;
 	conn_status.got_ip = false;
 	conn_status.getConnDataFlag = false;
@@ -25,10 +24,11 @@ Smarty::Smarty(String _name, String _desc)
 	else {
 		LOGln("Base ESP AP mode enabled");
 		isESPBase = true;
-		//WiFi.mode(WIFI_AP_STA);
+		WiFi.mode(WIFI_AP_STA);
 		WiFi.softAPConfig(IPAddress(ESP_SERVER_IP), IPAddress(ESP_SERVER_IP), IPAddress(255,255,255,0));
   		WiFi.softAP(ESP_AP_SSID, ESP_AP_PASS);
 	}
+	WiFi.setAutoReconnect(false);
 
 	ArduinoOTA.setHostname(name.c_str());
 	ArduinoOTA.begin();
@@ -78,20 +78,6 @@ void Smarty::onDisconnect(const WiFiEventStationModeDisconnected& event) {
 	conn_status.server_connected = false;
 	conn_status.disconnect_counter++;
 	LOGf("WiFi disconnected ... count = %d\n", conn_status.disconnect_counter);
-	if ( conn_status.disconnect_counter > 4 ) {
-		conn_status.disconnect_counter = 0;
-		if ( !conn_status.hardcoded_data && !isESPBase ) {
-			conn_status.getConnDataFlag = !conn_status.getConnDataFlag;
-			if ( conn_status.getConnDataFlag ) {
-				LOGf("Trying to connect to ESP AP:\n\tSSID: %s\n\tPass: %s\n", ESP_AP_SSID, ESP_AP_PASS);
-				WiFi.begin(ESP_AP_SSID, ESP_AP_PASS);
-			}
-			else {
-				LOGf("Trying to connect to WiFi normally:\n\tSSID: %s\n\tPass: %s\n", conn_data.ssid, conn_data.pass);
-				WiFi.begin(conn_data.ssid, conn_data.pass);
-			}
-		}
-	}
 }
 
 void Smarty::onGotIP(const WiFiEventStationModeGotIP& event) {
@@ -159,9 +145,24 @@ void Smarty::EEPROM_read() {
  * Run this function periodically from loop()
  */
 void Smarty::checkConnection() {
-	if ( !conn_status.getConnDataFlag ) {
+	if ( ( WiFi.status() != WL_CONNECTED ) && ( millis() - lastDisconnectTime >= RECONNECT_INTERVAL ) ) {
+		lastDisconnectTime = millis();
+		if ( !conn_status.hardcoded_data && !isESPBase && (conn_status.disconnect_counter > 4) ) {
+			conn_status.getConnDataFlag = !conn_status.getConnDataFlag;
+		}
+		if ( conn_status.getConnDataFlag ) {
+			conn_status.disconnect_counter = 4;
+			LOGf("Trying to get new WiFi data:\n\tSSID: %s\n\tPass: %s\n", ESP_AP_SSID, ESP_AP_PASS);
+			WiFi.begin(ESP_AP_SSID, ESP_AP_PASS);
+		}
+		else {
+			conn_status.disconnect_counter = 0;
+			LOGf("Trying to connect to WiFi normally:\n\tSSID: %s\n\tPass: %s\n", conn_data.ssid, conn_data.pass);
+			WiFi.begin(conn_data.ssid, conn_data.pass);
+		}
+	}
+	if ( !conn_status.getConnDataFlag && WiFi.status() == WL_CONNECTED && WiFi.localIP() ) {
 		ArduinoOTA.handle();
-
 		// Check UDP messages
 		char _buf[BUF_SIZE];
 		int packetSize = Udp.parsePacket();

@@ -59,6 +59,7 @@ class Smarty
 		std::vector<Param> params;
 		uint8_t numRemValues = 0;	// Number of remembered taget values
 		bool isESPBase = false;
+		uint32_t lastDisconnectTime = 0;
 
 		void EEPROM_read();
 		void onConnect(const WiFiEventStationModeConnected&);
