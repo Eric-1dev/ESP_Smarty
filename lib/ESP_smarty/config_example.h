@@ -15,8 +15,10 @@
 #define ESP_SERVER_IP		        192,168,100,1
 #define ESP_SERVER_PORT		        9999
 #define TIME_ZONE                   4
-#define RECONNECT_INTERVAL          10000                       // (ms)
-#define SERVER_RECONNECT_INTERVAL   5000                        // (ms)
+#define WIFI_RECONNECT_INTERVAL     10000                       // (ms)
+#define WIFI_RECONNECT_TRIES        4                           // Max 30
+#define SERVER_RECONNECT_INTERVAL   10000                       // (ms)
+#define SERVER_RECONNECT_TRIES      30                          // Max 30
 
 
 #endif

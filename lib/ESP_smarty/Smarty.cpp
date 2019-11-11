@@ -13,9 +13,8 @@ Smarty::Smarty(String _name, String _desc)
 	name = _name;
 	desc = _desc;
 	conn_status.server_connected = false;
-	conn_status.got_ip = false;
 	conn_status.getConnDataFlag = false;
-	conn_status.triesleft = 4;
+	conn_status.triesleft = WIFI_RECONNECT_TRIES;
 
 	WiFi.hostname(name);
 	if ( strcmp(name.c_str(), ESP_BASE_NAME) != 0 ) {
@@ -75,7 +74,6 @@ void Smarty::onConnect(const WiFiEventStationModeConnected& event) {
 }
 
 void Smarty::onDisconnect(const WiFiEventStationModeDisconnected& event) {
-	conn_status.got_ip = false;
 	conn_status.server_connected = false;
 	conn_status.triesleft--;
 	LOGf("WiFi disconnected ... tries left: %d\n", conn_status.triesleft);
@@ -89,8 +87,6 @@ void Smarty::onGotIP(const WiFiEventStationModeGotIP& event) {
 	LOGf("Got NETMASK: %s\n", event.mask.toString().c_str());
 	LOGf("Got GATEWAY: %s\n", event.gw.toString().c_str());
 	LOGf("Got BROADCAST ADDR: %s\n", bcastAddr.toString().c_str());
-
-	conn_status.got_ip = true;
 
 	if ( !conn_status.getConnDataFlag && IPAddress(conn_data.serverIP) == IPAddress(0, 0, 0, 0) ) {
 		jsonBuffer["header"] = WHERE_IS_SERVER;
@@ -153,7 +149,7 @@ void Smarty::checkConnection() {
 			if ( conn_status.getConnDataFlag )
 				conn_status.triesleft = 1;
 			else
-				conn_status.triesleft = 4;
+				conn_status.triesleft = WIFI_RECONNECT_TRIES;
 		}
 		if ( conn_status.getConnDataFlag ) {
 			LOGf("Trying to get new WiFi data:\n\tSSID: %s\n\tPass: %s\n", ESP_AP_SSID, ESP_AP_PASS);
@@ -180,7 +176,7 @@ void Smarty::checkConnection() {
 		}
 		/////////////////////
 	}
-	if ( conn_status.got_ip && !conn_status.server_connected ) {
+	if ( !conn_status.server_connected ) {
 		tcpConnect();
 	}
 }
@@ -368,7 +364,7 @@ bool Smarty::tcpConnect() {
 			if ( client.connect(IPAddress(ESP_SERVER_IP), ESP_SERVER_PORT) ) {
 				LOGln("Connected");
 				conn_status.server_connected = true;
-				conn_status.triesleft = 4;
+				conn_status.triesleft = SERVER_RECONNECT_TRIES;
 				askConnData();
 				return true;
 			}
@@ -382,7 +378,7 @@ bool Smarty::tcpConnect() {
 				if ( client.connect(IPAddress(conn_data.serverIP), conn_data.port) ) {
 					LOGln("Connected");
 					conn_status.server_connected = true;
-					conn_status.triesleft = 4;
+					conn_status.triesleft = SERVER_RECONNECT_TRIES;
 					sendFullInfo();
 					return true;
 				}
@@ -395,10 +391,10 @@ bool Smarty::tcpConnect() {
 	//LOGf("Failed ... counter = %d\n", conn_status.triesleft);
 
 	if ( !conn_status.triesleft ) {
-		conn_status.triesleft = 4;
 		if ( !conn_status.hardcoded_data && !isESPBase )
 			conn_status.getConnDataFlag = !conn_status.getConnDataFlag;
 		WiFi.reconnect();
+		conn_status.triesleft = WIFI_RECONNECT_TRIES + 1;
 	}
 
 	return false;
