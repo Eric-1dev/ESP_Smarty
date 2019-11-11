@@ -9,6 +9,7 @@
 
 #define BUF_SIZE            512
 
+#define ESP_BASE_NAME       "ESP-BASE"                  // name of base ESP, who send WiFi data to other ESP
 #define ESP_AP_SSID			"ESP-AP"
 #define ESP_AP_PASS			"123456789"
 #define ESP_SERVER_IP		192,168,100,1
