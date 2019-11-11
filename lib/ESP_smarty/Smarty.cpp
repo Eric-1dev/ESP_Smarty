@@ -15,6 +15,7 @@ Smarty::Smarty(String _name, String _desc)
 	conn_status.server_connected = false;
 	conn_status.got_ip = false;
 	conn_status.getConnDataFlag = false;
+	conn_status.triesleft = 4;
 
 	WiFi.hostname(name);
 	if ( strcmp(name.c_str(), ESP_BASE_NAME) != 0 ) {
@@ -69,15 +70,15 @@ Smarty::Smarty(String _name, String _desc, const char * _ssid, const char * _pas
 }
 
 void Smarty::onConnect(const WiFiEventStationModeConnected& event) {
-	conn_status.disconnect_counter = 0;
+	conn_status.triesleft = 4;
 	LOGln("WiFi connected");
 }
 
 void Smarty::onDisconnect(const WiFiEventStationModeDisconnected& event) {
 	conn_status.got_ip = false;
 	conn_status.server_connected = false;
-	conn_status.disconnect_counter++;
-	LOGf("WiFi disconnected ... count = %d\n", conn_status.disconnect_counter);
+	conn_status.triesleft--;
+	LOGf("WiFi disconnected ... tries left: %d\n", conn_status.triesleft);
 }
 
 void Smarty::onGotIP(const WiFiEventStationModeGotIP& event) {
@@ -145,18 +146,20 @@ void Smarty::EEPROM_read() {
  * Run this function periodically from loop()
  */
 void Smarty::checkConnection() {
-	if ( ( WiFi.status() != WL_CONNECTED ) && ( millis() - lastDisconnectTime >= RECONNECT_INTERVAL ) ) {
+	if ( ( WiFi.status() != WL_CONNECTED ) && ( millis() - lastDisconnectTime >= WIFI_RECONNECT_INTERVAL ) ) {
 		lastDisconnectTime = millis();
-		if ( !conn_status.hardcoded_data && !isESPBase && (conn_status.disconnect_counter > 4) ) {
+		if ( !conn_status.hardcoded_data && !isESPBase && (!conn_status.triesleft) ) {
 			conn_status.getConnDataFlag = !conn_status.getConnDataFlag;
+			if ( conn_status.getConnDataFlag )
+				conn_status.triesleft = 1;
+			else
+				conn_status.triesleft = 4;
 		}
 		if ( conn_status.getConnDataFlag ) {
-			conn_status.disconnect_counter = 4;
 			LOGf("Trying to get new WiFi data:\n\tSSID: %s\n\tPass: %s\n", ESP_AP_SSID, ESP_AP_PASS);
 			WiFi.begin(ESP_AP_SSID, ESP_AP_PASS);
 		}
 		else {
-			conn_status.disconnect_counter = 0;
 			LOGf("Trying to connect to WiFi normally:\n\tSSID: %s\n\tPass: %s\n", conn_data.ssid, conn_data.pass);
 			WiFi.begin(conn_data.ssid, conn_data.pass);
 		}
@@ -365,31 +368,34 @@ bool Smarty::tcpConnect() {
 			if ( client.connect(IPAddress(ESP_SERVER_IP), ESP_SERVER_PORT) ) {
 				LOGln("Connected");
 				conn_status.server_connected = true;
-				conn_status.disconnect_counter = 0;
+				conn_status.triesleft = 4;
 				askConnData();
 				return true;
 			}
 			else
-				conn_status.disconnect_counter++;
+				conn_status.triesleft--;
 		}
 		else {
-			LOGf("Trying to connect to Smarty server %s, port %d\n", IPAddress(conn_data.serverIP).toString().c_str(), conn_data.port);
-			if ( client.connect(IPAddress(conn_data.serverIP), conn_data.port) ) {
-				LOGln("Connected");
-				conn_status.server_connected = true;
-				conn_status.disconnect_counter = 0;
-				sendFullInfo();
-				return true;
+			if ( millis() - lastDisconnectTime > SERVER_RECONNECT_INTERVAL ) {
+				lastDisconnectTime = millis();
+				LOGf("Trying to connect to Smarty server %s, port %d\n", IPAddress(conn_data.serverIP).toString().c_str(), conn_data.port);
+				if ( client.connect(IPAddress(conn_data.serverIP), conn_data.port) ) {
+					LOGln("Connected");
+					conn_status.server_connected = true;
+					conn_status.triesleft = 4;
+					sendFullInfo();
+					return true;
+				}
+				else
+					conn_status.triesleft--;
 			}
-			else
-				conn_status.disconnect_counter++;
 		}
 	}
 
-	LOGf("Failed ... counter = %d\n", conn_status.disconnect_counter);
+	//LOGf("Failed ... counter = %d\n", conn_status.triesleft);
 
-	if ( conn_status.disconnect_counter > 4 ) {
-		conn_status.disconnect_counter = 0;
+	if ( !conn_status.triesleft ) {
+		conn_status.triesleft = 4;
 		if ( !conn_status.hardcoded_data && !isESPBase )
 			conn_status.getConnDataFlag = !conn_status.getConnDataFlag;
 		WiFi.reconnect();

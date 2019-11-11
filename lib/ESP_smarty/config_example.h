@@ -9,13 +9,14 @@
 
 #define BUF_SIZE            512
 
-#define ESP_BASE_NAME       "ESP-BASE"                  // name of base ESP, who send WiFi data to other ESP
-#define ESP_AP_SSID			"ESP-AP"
-#define ESP_AP_PASS			"123456789"
-#define ESP_SERVER_IP		192,168,100,1
-#define ESP_SERVER_PORT		9999
-#define TIME_ZONE           4
-#define RECONNECT_INTERVAL  10000                       // (ms)
+#define ESP_BASE_NAME                "ESP-BASE"                  // name of base ESP, who send WiFi data to other ESP
+#define ESP_AP_SSID			        "ESP-AP"
+#define ESP_AP_PASS			        "123456789"
+#define ESP_SERVER_IP		        192,168,100,1
+#define ESP_SERVER_PORT		        9999
+#define TIME_ZONE                   4
+#define RECONNECT_INTERVAL          10000                       // (ms)
+#define SERVER_RECONNECT_INTERVAL   5000                        // (ms)
 
 
 #endif
