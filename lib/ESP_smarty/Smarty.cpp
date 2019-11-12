@@ -432,5 +432,5 @@ uint16_t Smarty::getPort() {
 void Smarty::messageHandler(char *_mes) {
 	String mes = String(_mes);
 	if ( mes == I_AM_SERVER )
-		LOGln("Server found");
+		LOGln("Server is founded");
 }
