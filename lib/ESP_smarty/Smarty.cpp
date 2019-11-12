@@ -375,8 +375,8 @@ bool Smarty::checkTCP() {
 	if ( !conn_status.triesleft ) {
 		if ( !conn_status.hardcoded_data && !isESPBase )
 			conn_status.getConnDataFlag = !conn_status.getConnDataFlag;
-		WiFi.reconnect();
 		conn_status.triesleft = WIFI_RECONNECT_TRIES + 1;
+		WiFi.reconnect();
 	}
 
 	return false;
@@ -394,6 +394,7 @@ bool Smarty::serverConnect(IPAddress _server, uint16_t _port) {
 		conn_status.triesleft--;
 		LOGf("Failed ... counter = %d\n", conn_status.triesleft);
 	}
+	return false;
 }
 
 void Smarty::askConnData() {
