@@ -390,6 +390,7 @@ bool Smarty::serverConnect(IPAddress _server, uint16_t _port) {
 	if ( _server == IPAddress(0,0,0,0) ) {
 		jsonBuffer["header"] = WHERE_IS_SERVER;
 		send(true);
+		return false;
 	}
 	LOGf("Trying to connect to server %s, port %d\n", _server.toString().c_str(), _port);
 	if ( client.connect(_server, _port) ) {
@@ -429,5 +430,5 @@ uint16_t Smarty::getPort() {
 }
 
 void Smarty::messageHandler(char *_mes) {
-	switch ( _mes )
+	//switch ( _mes )
 }
