@@ -12,7 +12,6 @@ Smarty::Smarty(String _name, String _desc)
 
 	name = _name;
 	desc = _desc;
-	conn_status.server_connected = false;
 	conn_status.getConnDataFlag = false;
 	conn_status.triesleft = WIFI_RECONNECT_TRIES;
 
@@ -73,7 +72,6 @@ void Smarty::onConnect(const WiFiEventStationModeConnected& event) {
 }
 
 void Smarty::onDisconnect(const WiFiEventStationModeDisconnected& event) {
-	conn_status.server_connected = false;
 	conn_status.triesleft--;
 	LOGf("WiFi disconnected ... tries left: %d\n", conn_status.triesleft);
 }
@@ -178,7 +176,8 @@ void Smarty::checkConnection() {
 		}
 		/////////////////////
 	}
-	if ( !conn_status.server_connected ) {
+
+	if ( !client.connected() ) {
 		checkTCP();
 	}
 }
@@ -204,13 +203,10 @@ bool Smarty::send(bool broadcast) {
 	}
 	else {
 		LOGf("Sending message to server: %s ... ", _buf);
-		if ( conn_status.server_connected ) {
+		if ( client.connected() ) {
 			if ( client.write(_buf) ) {
 				LOGln("Success");
 				return true;
-			}
-			else {
-				conn_status.server_connected = false;
 			}
 		}
 		else {
@@ -398,7 +394,7 @@ bool Smarty::serverConnect(IPAddress _server, uint16_t _port) {
 	LOGf("Trying to connect to server %s, port %d\n", IPAddress(conn_data.serverIP).toString().c_str(), conn_data.port);
 	if ( client.connect(_server, _port) ) {
 		LOGln("Connected");
-		conn_status.server_connected = true;
+		client.keepAlive(5, 1, 3);
 		conn_status.triesleft = SERVER_RECONNECT_TRIES;
 		return true;
 	}

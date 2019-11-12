@@ -23,7 +23,6 @@ typedef struct {
 } conn_data_t;
 
 typedef struct {
-  uint8_t server_connected : 1;
   uint8_t hardcoded_data : 1;        // Hardcoded connection data (ssid, password, server IP, port)
   uint8_t getConnDataFlag : 1;
   uint8_t triesleft : 5;
