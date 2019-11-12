@@ -6,8 +6,8 @@ void handleOk();
 void handleGetData();
 void handleReboot();
 
-Smarty smarty(ESP_BASE_NAME, "Базовая станция");
-//Smarty smarty("dfgdfgdf", "Базовая станция");
+//Smarty smarty(ESP_BASE_NAME, "Базовая станция");
+Smarty smarty("dfgdfgdf", "Базовая станция");
 
 ESP8266WebServer webserver(80);
 WiFiServer esp_server(ESP_SERVER_PORT);
