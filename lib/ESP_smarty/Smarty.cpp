@@ -404,7 +404,7 @@ bool Smarty::serverConnect(IPAddress _server, uint16_t _port) {
 	}
 	else {
 		conn_status.triesleft--;
-		LOGf("Failed ... counter = %d\n", conn_status.triesleft);
+		LOGf("Failed ... tries = %d\n", conn_status.triesleft);
 	}
 	return false;
 }
