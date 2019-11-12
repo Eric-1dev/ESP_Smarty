@@ -122,7 +122,7 @@ void handleOk(){
   ip_addr[2] = atoi(strtok(NULL, "."));
   ip_addr[3] = atoi(strtok(NULL, "."));
 
-  if( ssid_ap.length() > 0 && ssid_ap.length() < 33 && pass_ap.length() < 64 && pass_ap.length() > 7 && ip_addr[3] > 0 && ip_addr[3] < 255 )
+  if( ssid_ap.length() > 0 && ssid_ap.length() < 33 && pass_ap.length() < 64 && pass_ap.length() > 7 && ip_addr[3] < 255 )
   {
     strcpy(conn_data.ssid, ssid_ap.c_str());
     strcpy(conn_data.pass, pass_ap.c_str());

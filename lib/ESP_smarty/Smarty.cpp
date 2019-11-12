@@ -85,11 +85,6 @@ void Smarty::onGotIP(const WiFiEventStationModeGotIP& event) {
 	LOGf("Got GATEWAY: %s\n", event.gw.toString().c_str());
 	LOGf("Got BROADCAST ADDR: %s\n", bcastAddr.toString().c_str());
 
-	if ( !conn_status.getConnDataMode && IPAddress(conn_data.serverIP) == IPAddress(0, 0, 0, 0) ) {
-		jsonBuffer["header"] = WHERE_IS_SERVER;
-		send(true);
-	}
-
 	conn_status.triesleft = SERVER_RECONNECT_TRIES;
 	lastDisconnectTime = 0;
 }
@@ -173,6 +168,7 @@ void Smarty::checkConnection() {
 			IPAddress remoteIp = Udp.remoteIP();
 			LOGf("Received packet of size %d from %s, port %d\n\tContents: ", packetSize, remoteIp.toString().c_str(), Udp.remotePort());
 			LOGln(_buf);
+			messageHandler(_buf);
 		}
 		/////////////////////
 	}
@@ -391,7 +387,11 @@ bool Smarty::checkTCP() {
 }
 
 bool Smarty::serverConnect(IPAddress _server, uint16_t _port) {
-	LOGf("Trying to connect to server %s, port %d\n", IPAddress(conn_data.serverIP).toString().c_str(), conn_data.port);
+	if ( _server == IPAddress(0,0,0,0) ) {
+		jsonBuffer["header"] = WHERE_IS_SERVER;
+		send(true);
+	}
+	LOGf("Trying to connect to server %s, port %d\n", _server.toString().c_str(), _port);
 	if ( client.connect(_server, _port) ) {
 		LOGln("\tConnected to server");
 		client.keepAlive(5, 1, 3);
@@ -426,4 +426,8 @@ IPAddress Smarty::getServerIP() {
 
 uint16_t Smarty::getPort() {
 	return conn_data.port;
+}
+
+void Smarty::messageHandler(char *_mes) {
+	switch ( _mes )
 }

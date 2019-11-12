@@ -72,6 +72,7 @@ class Smarty
 		bool checkTCP();
 		bool serverConnect(IPAddress, uint16_t);
 		void askConnData();
+		void messageHandler(char *);
 };
 
 #endif
