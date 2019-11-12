@@ -126,7 +126,7 @@ void Smarty::EEPROM_write(conn_data_t* data) {
 }
 
 /**
- * Read connection data to EEPROM
+ * Read connection data from EEPROM
  */
 void Smarty::EEPROM_read() {
 	EEPROM.begin(sizeof(conn_data));
@@ -177,7 +177,7 @@ void Smarty::checkConnection() {
 		/////////////////////
 	}
 	if ( !conn_status.server_connected ) {
-		tcpConnect();
+		checkTCP();
 	}
 }
 
@@ -234,7 +234,7 @@ void Smarty::addParam(paramType_t _type, \
 					  param_value_t _minValue, \
 					  param_value_t _maxValue, \
 					  bool _rem_target, \
-					  void (*_cb)(param_value_t), \
+					  void (*_callback)(param_value_t), \
 					  int8_t _divisor) {
 
 	Param *new_param = new Param;
@@ -264,7 +264,7 @@ void Smarty::addParam(paramType_t _type, \
 	new_param->remember_target = _rem_target;
 	if ( _rem_target )
 		numRemValues++;
-	new_param->callback = _cb;
+	new_param->callback = _callback;
 
 	params.push_back(*new_param);
 
@@ -357,37 +357,17 @@ void Smarty::sendParam(uint8_t _num) {
 	send();
 }
 
-bool Smarty::tcpConnect() {
+bool Smarty::checkTCP() {
 	if ( WiFi.status() == WL_CONNECTED && WiFi.localIP() ) {
 		if ( conn_status.getConnDataFlag ) {
-			LOGf("Trying to connect to ESP AP server %s, port %d\n", IPAddress(ESP_SERVER_IP).toString().c_str(), ESP_SERVER_PORT);
-			if ( client.connect(IPAddress(ESP_SERVER_IP), ESP_SERVER_PORT) ) {
-				LOGln("Connected");
-				conn_status.server_connected = true;
-				conn_status.triesleft = SERVER_RECONNECT_TRIES;
+			if ( serverConnect(IPAddress(ESP_SERVER_IP), ESP_SERVER_PORT) )
 				askConnData();
-				return true;
-			}
-			else {
-				conn_status.triesleft--;
-				LOGf("Failed ... tries = %d\n", conn_status.triesleft);
-			}
 		}
 		else {
 			if ( millis() - lastDisconnectTime > SERVER_RECONNECT_INTERVAL ) {
 				lastDisconnectTime = millis();
-				LOGf("Trying to connect to Smarty server %s, port %d\n", IPAddress(conn_data.serverIP).toString().c_str(), conn_data.port);
-				if ( client.connect(IPAddress(conn_data.serverIP), conn_data.port) ) {
-					LOGln("Connected");
-					conn_status.server_connected = true;
-					conn_status.triesleft = SERVER_RECONNECT_TRIES;
+				if ( serverConnect(IPAddress(conn_data.serverIP), conn_data.port) )
 					sendFullInfo();
-					return true;
-				}
-				else {
-					conn_status.triesleft--;
-					LOGf("Failed ... counter = %d\n", conn_status.triesleft);
-				}
 			}
 		}
 	}
@@ -400,6 +380,20 @@ bool Smarty::tcpConnect() {
 	}
 
 	return false;
+}
+
+bool Smarty::serverConnect(IPAddress _server, uint16_t _port) {
+	LOGf("Trying to connect to server %s, port %d\n", IPAddress(conn_data.serverIP).toString().c_str(), conn_data.port);
+	if ( client.connect(_server, _port) ) {
+		LOGln("Connected");
+		conn_status.server_connected = true;
+		conn_status.triesleft = SERVER_RECONNECT_TRIES;
+		return true;
+	}
+	else {
+		conn_status.triesleft--;
+		LOGf("Failed ... counter = %d\n", conn_status.triesleft);
+	}
 }
 
 void Smarty::askConnData() {

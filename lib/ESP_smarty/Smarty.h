@@ -32,7 +32,7 @@ class Smarty
 					  param_value_t _minValue, \
 					  param_value_t _maxValue, \
 					  bool _rem_target, \
-					  void (*_cb)(param_value_t) = NULL, \
+					  void (*_callback)(param_value_t) = NULL, \
 					  int8_t _divisor = 1);
 		param_value_t getTargetVal(uint8_t _num);
 		bool setValue(uint8_t _num, param_value_t _value);
@@ -69,7 +69,8 @@ class Smarty
 		bool receivedVal(uint8_t _num, param_value_t _value);
 		void sendFullInfo();
 		void sendParam(uint8_t _num);
-		bool tcpConnect();
+		bool checkTCP();
+		bool serverConnect(IPAddress, uint16_t);
 		void askConnData();
 };
 
