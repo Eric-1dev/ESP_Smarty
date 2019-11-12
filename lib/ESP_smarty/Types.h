@@ -1,12 +1,15 @@
 #ifndef __TYPES_H__
 #define __TYPES_H__
 
+#include <stdint.h>
+
 #define WHERE_IS_SERVER         "where is server"
 #define GIVE_ME_VALUES          "give me values"
 #define MY_NAME                 "hello, it's me"
 #define MY_PARAMS               "so what i can do"
 #define NEW_VALUE               "look, my value has changed"
 #define GIVE_ME_DATA            "give me wifi data"
+#define I_AM_SERVER             "hello, i am server"
 
 enum paramType_t {
   SWITCH,
