@@ -12,7 +12,7 @@ Smarty::Smarty(String _name, String _desc)
 
 	name = _name;
 	desc = _desc;
-	conn_status.getConnDataFlag = false;
+	conn_status.getConnDataMode = false;
 	conn_status.triesleft = WIFI_RECONNECT_TRIES;
 
 	WiFi.hostname(name);
@@ -85,7 +85,7 @@ void Smarty::onGotIP(const WiFiEventStationModeGotIP& event) {
 	LOGf("Got GATEWAY: %s\n", event.gw.toString().c_str());
 	LOGf("Got BROADCAST ADDR: %s\n", bcastAddr.toString().c_str());
 
-	if ( !conn_status.getConnDataFlag && IPAddress(conn_data.serverIP) == IPAddress(0, 0, 0, 0) ) {
+	if ( !conn_status.getConnDataMode && IPAddress(conn_data.serverIP) == IPAddress(0, 0, 0, 0) ) {
 		jsonBuffer["header"] = WHERE_IS_SERVER;
 		send(true);
 	}
@@ -145,13 +145,13 @@ void Smarty::checkConnection() {
 	if ( ( WiFi.status() != WL_CONNECTED ) && ( millis() - lastDisconnectTime >= WIFI_RECONNECT_INTERVAL ) ) {
 		lastDisconnectTime = millis();
 		if ( !conn_status.hardcoded_data && !isESPBase && (!conn_status.triesleft) ) {
-			conn_status.getConnDataFlag = !conn_status.getConnDataFlag;
-			if ( conn_status.getConnDataFlag )
+			conn_status.getConnDataMode = !conn_status.getConnDataMode;
+			if ( conn_status.getConnDataMode )
 				conn_status.triesleft = 1;
 			else
 				conn_status.triesleft = WIFI_RECONNECT_TRIES;
 		}
-		if ( conn_status.getConnDataFlag ) {
+		if ( conn_status.getConnDataMode ) {
 			LOGf("Trying to get new WiFi data:\n\tSSID: %s\n\tPass: %s\n", ESP_AP_SSID, ESP_AP_PASS);
 			WiFi.begin(ESP_AP_SSID, ESP_AP_PASS);
 		}
@@ -160,7 +160,7 @@ void Smarty::checkConnection() {
 			WiFi.begin(conn_data.ssid, conn_data.pass);
 		}
 	}
-	if ( !conn_status.getConnDataFlag && WiFi.status() == WL_CONNECTED && WiFi.localIP() ) {
+	if ( !conn_status.getConnDataMode && WiFi.status() == WL_CONNECTED && WiFi.localIP() ) {
 		ArduinoOTA.handle();
 		// Check UDP messages
 		char _buf[BUF_SIZE];
@@ -346,7 +346,7 @@ void Smarty::sendFullInfo() {
  * @param _num - number of parameter
  */
 void Smarty::sendParam(uint8_t _num) {
-	if ( conn_status.getConnDataFlag )
+	if ( conn_status.getConnDataMode )
 		return;
 	jsonBuffer["header"] = NEW_VALUE;
 	jsonBuffer["mac"] = WiFi.macAddress();
@@ -357,7 +357,7 @@ void Smarty::sendParam(uint8_t _num) {
 
 bool Smarty::checkTCP() {
 	if ( WiFi.status() == WL_CONNECTED && WiFi.localIP() ) {
-		if ( conn_status.getConnDataFlag ) {
+		if ( conn_status.getConnDataMode ) {
 			if ( serverConnect(IPAddress(ESP_SERVER_IP), ESP_SERVER_PORT) )
 				askConnData();
 		}
@@ -372,12 +372,12 @@ bool Smarty::checkTCP() {
 
 	if ( !conn_status.triesleft ) {
 		if ( !conn_status.hardcoded_data && !isESPBase ) {
-			if ( conn_status.getConnDataFlag ) {
-				conn_status.getConnDataFlag = false;
+			if ( conn_status.getConnDataMode ) {
+				conn_status.getConnDataMode = false;
 				conn_status.triesleft = WIFI_RECONNECT_TRIES + 1;
 			}
 			else {
-				conn_status.getConnDataFlag = false;
+				conn_status.getConnDataMode = false;
 				conn_status.triesleft = 1;
 			}
 			lastDisconnectTime = 0;
@@ -393,14 +393,14 @@ bool Smarty::checkTCP() {
 bool Smarty::serverConnect(IPAddress _server, uint16_t _port) {
 	LOGf("Trying to connect to server %s, port %d\n", IPAddress(conn_data.serverIP).toString().c_str(), conn_data.port);
 	if ( client.connect(_server, _port) ) {
-		LOGln("Connected");
+		LOGln("\tConnected to server");
 		client.keepAlive(5, 1, 3);
 		conn_status.triesleft = SERVER_RECONNECT_TRIES;
 		return true;
 	}
 	else {
 		conn_status.triesleft--;
-		LOGf("Failed ... tries = %d\n", conn_status.triesleft);
+		LOGf("\tFailed ... tries = %d\n", conn_status.triesleft);
 	}
 	return false;
 }
