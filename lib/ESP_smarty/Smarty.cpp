@@ -187,8 +187,8 @@ void Smarty::checkConnection() {
 bool Smarty::send(bool broadcast) {
 	char _buf[BUF_SIZE];	// buffer for network message
 
-	serializeJson(jsonBuffer, _buf);
-	jsonBuffer.clear();
+	//serializeJson(jsonDoc, _buf);
+	jsonDoc.clear();
 
 	if ( broadcast ) {
 		LOGf("Sending broadcast message: %s ...", _buf);
@@ -201,10 +201,11 @@ bool Smarty::send(bool broadcast) {
 	else {
 		LOGf("Sending message to server: %s ... ", _buf);
 		if ( client.connected() ) {
-			if ( client.write(_buf) ) {
+			serializeJson(jsonDoc, client);
+			/*if ( client.write(_buf) ) {
 				LOGln("Success");
 				return true;
-			}
+			}*/
 		}
 		else {
 			LOG("not connected to server ... ");
@@ -320,22 +321,24 @@ bool Smarty::setValue(uint8_t _num, param_value_t _value) {
 void Smarty::sendFullInfo() {
 	uint8_t i;
 
-	jsonBuffer["header"] = MY_NAME;
-	jsonBuffer["mac"] = WiFi.macAddress();
-	jsonBuffer["name"] = name;
-	jsonBuffer["desc"] = desc;
-	send();
-
+	jsonDoc["header"] = MY_NAME;
+	jsonDoc["mac"] = WiFi.macAddress();
+	jsonDoc["name"] = name;
+	jsonDoc["desc"] = desc;
+	JsonArray arr_params = jsonDoc.createNestedArray("arr_params");
+	JsonObject obj_params = jsonDoc.createNestedObject("params");
 	for ( i = 0; i < params.size(); i++ ) {
-		jsonBuffer["header"] = MY_PARAMS;
-		jsonBuffer["mac"] = WiFi.macAddress();
-		jsonBuffer["desc"] = params[i].desc;
-		jsonBuffer["curValue"] = params[i].curValue;
-		jsonBuffer["minValue"] = params[i].minValue;
-		jsonBuffer["maxValue"] = params[i].maxValue;
-		jsonBuffer["divisor"] = params[i].divisor;
-		send();
+		//params[""]//
+		//jsonDoc["mac"] = WiFi.macAddress();
+		obj_params["desc"] = params[i].desc;
+		obj_params["curValue"] = params[i].curValue;
+		obj_params["targetValue"] = params[i].targetValue;
+		obj_params["minValue"] = params[i].minValue;
+		obj_params["maxValue"] = params[i].maxValue;
+		obj_params["divisor"] = params[i].divisor;
+		arr_params.add(obj_params);
 	}
+	send();
 }
 
 /**
@@ -345,10 +348,10 @@ void Smarty::sendFullInfo() {
 void Smarty::sendParam(uint8_t _num) {
 	if ( conn_status.getConnDataMode )
 		return;
-	jsonBuffer["header"] = NEW_VALUE;
-	jsonBuffer["mac"] = WiFi.macAddress();
-	jsonBuffer["param"] = _num;
-	jsonBuffer["value"] = params[_num].curValue;
+	jsonDoc["header"] = NEW_VALUE;
+	jsonDoc["mac"] = WiFi.macAddress();
+	jsonDoc["param"] = _num;
+	jsonDoc["value"] = params[_num].curValue;
 	send();
 }
 
@@ -389,7 +392,7 @@ bool Smarty::checkTCP() {
 
 bool Smarty::serverConnect(IPAddress _server, uint16_t _port) {
 	if ( _server == IPAddress(0,0,0,0) ) {
-		jsonBuffer["header"] = WHERE_IS_SERVER;
+		jsonDoc["header"] = WHERE_IS_SERVER;
 		send(true);
 		return false;
 	}
@@ -409,8 +412,8 @@ bool Smarty::serverConnect(IPAddress _server, uint16_t _port) {
 
 void Smarty::askConnData() {
 	LOGln("Asking new WiFi & Server data");
-	jsonBuffer["header"] = GIVE_ME_DATA;
-	jsonBuffer["mac"] = WiFi.macAddress();
+	jsonDoc["header"] = GIVE_ME_DATA;
+	jsonDoc["mac"] = WiFi.macAddress();
 	send();
 }
 
