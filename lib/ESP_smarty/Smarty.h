@@ -55,7 +55,7 @@ class Smarty
 		IPAddress bcastAddr;
 		WiFiClient client;
 		WiFiUDP Udp;
-		StaticJsonDocument<512> jsonDoc;
+		StaticJsonDocument<BUF_SIZE> jsonDoc;
 		std::vector<Param> params;
 		uint8_t numRemValues = 0;	// Number of remembered taget values
 		bool isESPBase = false;
