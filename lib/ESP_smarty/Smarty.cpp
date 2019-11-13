@@ -186,7 +186,8 @@ void Smarty::checkConnection() {
  */
 bool Smarty::send(bool broadcast) {
 	char _buf[BUF_SIZE];	// buffer for network message
-	//serializeJsonPretty(jsonDoc, _buf);
+
+	//_buf[serializeJsonPretty(jsonDoc, _buf)] = '\0';
 
 	if ( broadcast ) {
 		LOGf("Sending broadcast message: %s ...", _buf);
@@ -200,7 +201,9 @@ bool Smarty::send(bool broadcast) {
 	else {
 		LOGf("Sending message to server: %s ... ", _buf);
 		if ( client.connected() ) {
-			if ( LOGln(serializeJsonPretty(jsonDoc, client)) ) {
+			if ( serializeJsonPretty(jsonDoc, client) ) {
+			//if ( client.write(_buf) ) {
+				client.write('\0');
 				jsonDoc.clear();
 				LOGln("Success");
 				return true;
