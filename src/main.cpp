@@ -28,6 +28,9 @@ String html_header = "<html>\
  conn_data_t conn_data;
 
 void setup (void) {
+  smarty.addParam(RGB, "Подсветка базового блока", 0, 0, false, NULL, 1);
+  smarty.addParam(SWITCH, "Выключатель подсветки базового блока", 0, 0, false, NULL, 1);
+  smarty.addParam(NUMBER, "Просто параметр для проверки длины JSON-строки", 0, 3, false, NULL, 1);
   smarty.begin();
   Serial.begin(115200);
 

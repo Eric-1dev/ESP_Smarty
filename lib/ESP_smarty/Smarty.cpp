@@ -186,31 +186,31 @@ void Smarty::checkConnection() {
  */
 bool Smarty::send(bool broadcast) {
 	char _buf[BUF_SIZE];	// buffer for network message
-
-	//serializeJson(jsonDoc, _buf);
-	jsonDoc.clear();
+	//serializeJsonPretty(jsonDoc, _buf);
 
 	if ( broadcast ) {
 		LOGf("Sending broadcast message: %s ...", _buf);
 		Udp.beginPacket(bcastAddr, conn_data.port);
-		Udp.write(_buf);
+		serializeJsonPretty(jsonDoc, Udp);
 		Udp.endPacket();
+		jsonDoc.clear();
 		LOGln("Success");
 		return true;
 	}
 	else {
 		LOGf("Sending message to server: %s ... ", _buf);
 		if ( client.connected() ) {
-			serializeJson(jsonDoc, client);
-			/*if ( client.write(_buf) ) {
+			if ( serializeJson(jsonDoc, client) ) {
+				jsonDoc.clear();
 				LOGln("Success");
 				return true;
-			}*/
+			}
 		}
 		else {
 			LOG("not connected to server ... ");
 		}
 	}
+	jsonDoc.clear();
 	LOGln("Failed");
 	return false;
 }
@@ -325,18 +325,15 @@ void Smarty::sendFullInfo() {
 	jsonDoc["mac"] = WiFi.macAddress();
 	jsonDoc["name"] = name;
 	jsonDoc["desc"] = desc;
-	JsonArray arr_params = jsonDoc.createNestedArray("arr_params");
-	JsonObject obj_params = jsonDoc.createNestedObject("params");
+	JsonArray arr_params = jsonDoc.createNestedArray("params");
 	for ( i = 0; i < params.size(); i++ ) {
-		//params[""]//
-		//jsonDoc["mac"] = WiFi.macAddress();
-		obj_params["desc"] = params[i].desc;
-		obj_params["curValue"] = params[i].curValue;
-		obj_params["targetValue"] = params[i].targetValue;
-		obj_params["minValue"] = params[i].minValue;
-		obj_params["maxValue"] = params[i].maxValue;
-		obj_params["divisor"] = params[i].divisor;
-		arr_params.add(obj_params);
+		JsonObject obj_param = arr_params.createNestedObject();
+		obj_param["desc"] = params[i].desc;
+		obj_param["curValue"] = params[i].curValue;
+		obj_param["targetValue"] = params[i].targetValue;
+		obj_param["minValue"] = params[i].minValue;
+		obj_param["maxValue"] = params[i].maxValue;
+		obj_param["divisor"] = params[i].divisor;
 	}
 	send();
 }
