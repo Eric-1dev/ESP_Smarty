@@ -133,7 +133,8 @@ void Smarty::EEPROM_read() {
 
 /**
  * Handling ArduinoOTA, checking WiFi connection,
- * checking new messages from server.
+ * checking new messages from server,
+ * checking server connection.
  * Run this function periodically from loop()
  */
 void Smarty::checkConnection() {
@@ -323,18 +324,16 @@ void Smarty::sendFullInfo() {
 	jsonBuffer["mac"] = WiFi.macAddress();
 	jsonBuffer["name"] = name;
 	jsonBuffer["desc"] = desc;
-	send();
 
 	for ( i = 0; i < params.size(); i++ ) {
-		jsonBuffer["header"] = MY_PARAMS;
-		jsonBuffer["mac"] = WiFi.macAddress();
-		jsonBuffer["desc"] = params[i].desc;
-		jsonBuffer["curValue"] = params[i].curValue;
-		jsonBuffer["minValue"] = params[i].minValue;
-		jsonBuffer["maxValue"] = params[i].maxValue;
-		jsonBuffer["divisor"] = params[i].divisor;
-		send();
+		jsonBuffer["params"][i]["desc"] = params[i].desc;
+		jsonBuffer["params"][i]["curValue"] = params[i].curValue;
+		jsonBuffer["params"][i]["targetValue"] = params[i].curValue;
+		jsonBuffer["params"][i]["minValue"] = params[i].minValue;
+		jsonBuffer["params"][i]["maxValue"] = params[i].maxValue;
+		jsonBuffer["params"][i]["divisor"] = params[i].divisor;
 	}
+	send();
 }
 
 /**
