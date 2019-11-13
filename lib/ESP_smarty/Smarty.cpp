@@ -200,7 +200,7 @@ bool Smarty::send(bool broadcast) {
 	else {
 		LOGf("Sending message to server: %s ... ", _buf);
 		if ( client.connected() ) {
-			if ( serializeJson(jsonDoc, client) ) {
+			if ( LOGln(serializeJsonPretty(jsonDoc, client)) ) {
 				jsonDoc.clear();
 				LOGln("Success");
 				return true;
@@ -235,8 +235,9 @@ void Smarty::addParam(paramType_t _type, \
 
 	Param *new_param = new Param;
 
-	new_param->type = _type;
+	new_param->num = params.size();
 	strcpy(new_param->desc, _desc);
+	new_param->type = _type;
 	switch (_type)
 	{
 		case SWITCH:
@@ -325,17 +326,20 @@ void Smarty::sendFullInfo() {
 	jsonDoc["mac"] = WiFi.macAddress();
 	jsonDoc["name"] = name;
 	jsonDoc["desc"] = desc;
-	JsonArray arr_params = jsonDoc.createNestedArray("params");
-	for ( i = 0; i < params.size(); i++ ) {
-		JsonObject obj_param = arr_params.createNestedObject();
-		obj_param["desc"] = params[i].desc;
-		obj_param["curValue"] = params[i].curValue;
-		obj_param["targetValue"] = params[i].targetValue;
-		obj_param["minValue"] = params[i].minValue;
-		obj_param["maxValue"] = params[i].maxValue;
-		obj_param["divisor"] = params[i].divisor;
-	}
 	send();
+
+	for ( i = 0; i < params.size(); i++ ) {
+		jsonDoc["header"] = MY_PARAMS;
+		jsonDoc["mac"] = WiFi.macAddress();
+		jsonDoc["num"] = params[i].num;
+		jsonDoc["desc"] = params[i].desc;
+		jsonDoc["curValue"] = params[i].curValue;
+		jsonDoc["targetValue"] = params[i].targetValue;
+		jsonDoc["minValue"] = params[i].minValue;
+		jsonDoc["maxValue"] = params[i].maxValue;
+		jsonDoc["divisor"] = params[i].divisor;
+		send();
+	}
 }
 
 /**

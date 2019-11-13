@@ -34,6 +34,7 @@ typedef struct {
 typedef int16_t param_value_t;
 
 typedef struct {
+    uint8_t num;
     char desc[128];
     paramType_t type;
     param_value_t curValue;
