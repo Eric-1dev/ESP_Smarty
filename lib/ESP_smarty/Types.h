@@ -3,15 +3,17 @@
 
 #include <stdint.h>
 
-#define WHERE_IS_SERVER         "where is server"
-#define GIVE_ME_VALUES          "give me values"
-#define MY_NAME                 "hello, it's me"
-#define MY_PARAMS               "so what i can do"
-#define NEW_VALUE               "look, my value has changed"
-#define GIVE_ME_DATA            "give me wifi data"
-#define I_AM_SERVER             "hello, i am server"
+enum headers : uint8_t {
+  WHERE_IS_SERVER,          // Finding server with broadcast message
+  GIVE_ME_VALUES,               // Servers asking all values
+  MY_NAME,                      // Hello message (from client to server on connect)
+  MY_PARAMS,                    // List of existing parameters (one by one)
+  NEW_VALUE,                    // On value change
+  GIVE_ME_DATA,                 // Client asking WiFi data from ESP-BASE
+  I_AM_SERVER                   // Server answer on WHERE_IS_SERVER
+};
 
-enum paramType_t {
+enum paramType_t : uint8_t {
   SWITCH,
   RGB,
   NUMBER,
@@ -36,7 +38,7 @@ typedef int16_t param_value_t;
 typedef struct {
     uint8_t num;
     char desc[128];
-    paramType_t type;
+    uint8_t type;
     param_value_t curValue;
     bool remember_target;
     param_value_t targetValue;

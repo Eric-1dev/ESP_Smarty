@@ -202,7 +202,6 @@ bool Smarty::send(bool broadcast) {
 		LOGf("Sending message to server: %s ... ", _buf);
 		if ( client.connected() ) {
 			if ( serializeJsonPretty(jsonDoc, client) ) {
-			//if ( client.write(_buf) ) {
 				client.write('\0');
 				jsonDoc.clear();
 				LOGln("Success");
@@ -325,17 +324,18 @@ bool Smarty::setValue(uint8_t _num, param_value_t _value) {
 void Smarty::sendFullInfo() {
 	uint8_t i;
 
-	jsonDoc["header"] = MY_NAME;
+	jsonDoc["header"] = (uint8_t)MY_NAME;
 	jsonDoc["mac"] = WiFi.macAddress();
 	jsonDoc["name"] = name;
 	jsonDoc["desc"] = desc;
 	send();
 
 	for ( i = 0; i < params.size(); i++ ) {
-		jsonDoc["header"] = MY_PARAMS;
+		jsonDoc["header"] = (uint8_t)MY_PARAMS;
 		jsonDoc["mac"] = WiFi.macAddress();
 		jsonDoc["num"] = params[i].num;
 		jsonDoc["desc"] = params[i].desc;
+		jsonDoc["type"] = params[i].type;
 		jsonDoc["curValue"] = params[i].curValue;
 		jsonDoc["targetValue"] = params[i].targetValue;
 		jsonDoc["minValue"] = params[i].minValue;
@@ -352,7 +352,7 @@ void Smarty::sendFullInfo() {
 void Smarty::sendParam(uint8_t _num) {
 	if ( conn_status.getConnDataMode )
 		return;
-	jsonDoc["header"] = NEW_VALUE;
+	jsonDoc["header"] = (uint8_t)NEW_VALUE;
 	jsonDoc["mac"] = WiFi.macAddress();
 	jsonDoc["param"] = _num;
 	jsonDoc["value"] = params[_num].curValue;
@@ -396,7 +396,7 @@ bool Smarty::checkTCP() {
 
 bool Smarty::serverConnect(IPAddress _server, uint16_t _port) {
 	if ( _server == IPAddress(0,0,0,0) ) {
-		jsonDoc["header"] = WHERE_IS_SERVER;
+		jsonDoc["header"] = (uint8_t)WHERE_IS_SERVER;
 		send(true);
 		return false;
 	}
@@ -416,7 +416,7 @@ bool Smarty::serverConnect(IPAddress _server, uint16_t _port) {
 
 void Smarty::askConnData() {
 	LOGln("Asking new WiFi & Server data");
-	jsonDoc["header"] = GIVE_ME_DATA;
+	jsonDoc["header"] = (uint8_t)GIVE_ME_DATA;
 	jsonDoc["mac"] = WiFi.macAddress();
 	send();
 }
@@ -439,6 +439,6 @@ uint16_t Smarty::getPort() {
 
 void Smarty::messageHandler(char *_mes) {
 	String mes = String(_mes);
-	if ( mes == I_AM_SERVER )
-		LOGln("Server found");
+	//if ( mes == I_AM_SERVER )
+	//	LOGln("Server found");
 }
