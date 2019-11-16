@@ -53,6 +53,7 @@ class Smarty
 		WiFiEventHandler mGotIPHandler;
 		WiFiEventHandler mDisconnectHandler;
 		IPAddress bcastAddr;
+		IPAddress netaddr;
 		WiFiClient client;
 		WiFiUDP Udp;
 		StaticJsonDocument<BUF_SIZE> jsonDoc;
@@ -69,6 +70,7 @@ class Smarty
 		bool receivedVal(uint8_t _num, param_value_t _value);
 		void sendFullInfo();
 		void sendParam(uint8_t _num);
+		void sendAllParams();
 		bool checkTCP();
 		bool serverConnect(IPAddress, uint16_t);
 		void askConnData();

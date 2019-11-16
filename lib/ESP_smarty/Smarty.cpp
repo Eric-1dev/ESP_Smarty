@@ -80,10 +80,13 @@ void Smarty::onGotIP(const WiFiEventStationModeGotIP& event) {
 	Udp.begin(conn_data.port);
 
 	bcastAddr = (event.ip.v4() & event.mask.v4()) | ~event.mask.v4();
+	netaddr = event.ip.v4() & event.mask.v4();
+
 	LOGf("Got IP: %s\n", event.ip.toString().c_str());
 	LOGf("Got NETMASK: %s\n", event.mask.toString().c_str());
 	LOGf("Got GATEWAY: %s\n", event.gw.toString().c_str());
 	LOGf("Got BROADCAST ADDR: %s\n", bcastAddr.toString().c_str());
+	LOGf("Got NETWORK: %s\n", netaddr.toString().c_str());
 
 	conn_status.triesleft = SERVER_RECONNECT_TRIES;
 	lastDisconnectTime = 0;
@@ -366,9 +369,15 @@ void Smarty::sendParam(uint8_t _num) {
 		return;
 	jsonDoc["header"] = (uint8_t)NEW_VALUE;
 	jsonDoc["mac"] = WiFi.macAddress();
-	jsonDoc["param"] = _num;
+	jsonDoc["num"] = _num;
 	jsonDoc["value"] = params[_num].curValue;
 	send();
+}
+
+void Smarty::sendAllParams() {
+	uint8_t i;
+	for ( i = 0; i < params.size(); i++ )
+		sendParam(i);
 }
 
 bool Smarty::checkTCP() {
@@ -409,6 +418,8 @@ bool Smarty::checkTCP() {
 bool Smarty::serverConnect(IPAddress _server, uint16_t _port) {
 	if ( _server == IPAddress(0,0,0,0) ) {
 		jsonDoc["header"] = (uint8_t)WHERE_IS_SERVER;
+		jsonDoc["mac"] = WiFi.macAddress();
+		jsonDoc["netaddr"] = netaddr;
 		send(true);
 		return false;
 	}
@@ -450,15 +461,25 @@ uint16_t Smarty::getPort() {
 }
 
 void Smarty::messageHandler() {
-	//String mes = String(_mes);
-	//if ( mes == I_AM_SERVER )
-	//	LOGln("Server found");
 	switch ( (uint8_t)jsonDoc["header"] ) {
 		case MY_NAME:
 			LOGln("What?");
 			break;
 		case SET_VALUE:
 			receivedVal(jsonDoc["num"], jsonDoc["targetValue"]);
+			break;
+		case GIVE_ME_VALUES:
+			sendAllParams();
+			break;
+		case SERVER_HERE:
+			//const char* _ip_str = jsonDoc["serverIP"];
+			//IPAddress _ip = IPAddress::fromString( _ip_str );
+			IPAddress _ip(0,0,0,0);
+			//_ip.fromString( _ip_str );
+			conn_data.serverIP[0] = _ip[0];
+			conn_data.serverIP[1] = _ip[1];
+			conn_data.serverIP[2] = _ip[2];
+			conn_data.serverIP[3] = _ip[3];
 			break;
 		default:
 			break;
