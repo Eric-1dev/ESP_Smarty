@@ -166,13 +166,18 @@ void Smarty::checkConnection() {
 		if ( !conn_status.getConnDataMode )
 			ArduinoOTA.handle();
 		// Check UDP messages
-		//char _buf[BUF_SIZE];
 		int packetSize = Udp.parsePacket();
 		if (packetSize) {
 			IPAddress remoteIp = Udp.remoteIP();
-			LOGf("Received packet of size %d from %s, port %d\n", packetSize, remoteIp.toString().c_str(), Udp.remotePort());
 
 			if ( !deserializeJson( jsonDoc, Udp ) ) {
+#ifdef DEBUG
+				char _buf[BUF_SIZE];
+				serializeJsonPretty(jsonDoc, _buf);
+				LOGf("Message received over UDP. Size %d from %s, port %d\n", packetSize, remoteIp.toString().c_str(), Udp.remotePort());
+				LOGf("\tContents\n%s\n", _buf );
+				LOGln(_buf);
+#endif
 				messageHandler();
 			}
 
@@ -192,9 +197,11 @@ void Smarty::checkConnection() {
 	else {
 		if ( client.available() ) {
 			if ( !deserializeJson( jsonDoc, client.readStringUntil('\0') ) ) {
-				//char _buf[BUF_SIZE];
-				//serializeJsonPretty(jsonDoc, _buf);
-				//LOGf("Message received:\n%s\n", _buf );
+#ifdef DEBUG
+				char _buf[BUF_SIZE];
+				serializeJsonPretty(jsonDoc, _buf);
+				LOGf("Message received over TCP:\n%s\n", _buf );
+#endif
 				messageHandler();
 			}
 		}
