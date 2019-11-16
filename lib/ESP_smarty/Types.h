@@ -4,13 +4,14 @@
 #include <stdint.h>
 
 enum headers : uint8_t {
-  WHERE_IS_SERVER,          // Finding server with broadcast message
+  WHERE_IS_SERVER,              // Finding server with broadcast message
   GIVE_ME_VALUES,               // Servers asking all values
   MY_NAME,                      // Hello message (from client to server on connect)
   MY_PARAMS,                    // List of existing parameters (one by one)
   NEW_VALUE,                    // On value change
   GIVE_ME_DATA,                 // Client asking WiFi data from ESP-BASE
-  I_AM_SERVER                   // Server answer on WHERE_IS_SERVER
+  I_AM_SERVER,                  // Server answer on WHERE_IS_SERVER
+  SET_VALUE                     // Server sending new TARGET VALUE
 };
 
 enum paramType_t : uint8_t {

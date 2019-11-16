@@ -162,20 +162,32 @@ void Smarty::checkConnection() {
 		char _buf[BUF_SIZE];
 		int packetSize = Udp.parsePacket();
 		if (packetSize) {
-			int len = Udp.read(_buf, sizeof(_buf)-1);
-			if (len > 0) {
-				_buf[len] = '\0';
-			}
 			IPAddress remoteIp = Udp.remoteIP();
 			LOGf("Received packet of size %d from %s, port %d\n\tContents: ", packetSize, remoteIp.toString().c_str(), Udp.remotePort());
 			LOGln(_buf);
-			messageHandler(_buf);
+			if ( !deserializeJson( jsonDoc, Udp ) ) {
+				messageHandler();
+			}
+			//int len = Udp.read(_buf, sizeof(_buf)-1);
+			//if (len > 0) {
+			//	_buf[len] = '\0';
+			//}
 		}
 		/////////////////////
 	}
 
 	if ( !client.connected() ) {
 		checkTCP();
+	}
+	else {
+		if ( client.available() ) {
+			if ( !deserializeJson( jsonDoc, client.readStringUntil('\0') ) ) {
+				//char _buf[BUF_SIZE];
+				//serializeJsonPretty(jsonDoc, _buf);
+				//LOGf("Message received:\n%s\n", _buf );
+				messageHandler();
+			}
+		}
 	}
 }
 
@@ -437,8 +449,18 @@ uint16_t Smarty::getPort() {
 	return conn_data.port;
 }
 
-void Smarty::messageHandler(char *_mes) {
-	String mes = String(_mes);
+void Smarty::messageHandler() {
+	//String mes = String(_mes);
 	//if ( mes == I_AM_SERVER )
 	//	LOGln("Server found");
+	switch ( (uint8_t)jsonDoc["header"] ) {
+		case MY_NAME:
+			LOGln("What?");
+			break;
+		case SET_VALUE:
+			receivedVal(jsonDoc["num"], jsonDoc["targetValue"]);
+			break;
+		default:
+			break;
+	}
 }
