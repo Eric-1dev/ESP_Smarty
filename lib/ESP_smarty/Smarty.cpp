@@ -159,22 +159,26 @@ void Smarty::checkConnection() {
 			WiFi.begin(conn_data.ssid, conn_data.pass);
 		}
 	}
-	if ( !conn_status.getConnDataMode && WiFi.status() == WL_CONNECTED && WiFi.localIP() ) {
-		ArduinoOTA.handle();
+	if ( WiFi.status() == WL_CONNECTED && WiFi.localIP() ) {
+		if ( !conn_status.getConnDataMode )
+			ArduinoOTA.handle();
 		// Check UDP messages
-		char _buf[BUF_SIZE];
+		//char _buf[BUF_SIZE];
 		int packetSize = Udp.parsePacket();
 		if (packetSize) {
 			IPAddress remoteIp = Udp.remoteIP();
-			LOGf("Received packet of size %d from %s, port %d\n\tContents: ", packetSize, remoteIp.toString().c_str(), Udp.remotePort());
-			LOGln(_buf);
+			LOGf("Received packet of size %d from %s, port %d\n", packetSize, remoteIp.toString().c_str(), Udp.remotePort());
+
 			if ( !deserializeJson( jsonDoc, Udp ) ) {
 				messageHandler();
 			}
-			//int len = Udp.read(_buf, sizeof(_buf)-1);
-			//if (len > 0) {
-			//	_buf[len] = '\0';
-			//}
+
+			/*int len = Udp.read(_buf, sizeof(_buf)-1);
+			if (len > 0) {
+				_buf[len] = '\0';
+			}
+			LOGf("Received packet of size %d from %s, port %d\n\tContents: ", packetSize, remoteIp.toString().c_str(), Udp.remotePort());
+			LOGln(_buf);*/
 		}
 		/////////////////////
 	}
@@ -200,9 +204,10 @@ void Smarty::checkConnection() {
  * @param broadcast - True - UDP broacast packet. False - TCP packet to current server
  */
 bool Smarty::send(bool broadcast) {
+#ifdef DEBUG
 	char _buf[BUF_SIZE];	// buffer for network message
-
-	//_buf[serializeJsonPretty(jsonDoc, _buf)] = '\0';
+	_buf[serializeJsonPretty(jsonDoc, _buf)] = '\0';
+#endif
 
 	if ( broadcast ) {
 		LOGf("Sending broadcast message: %s ...", _buf);
@@ -419,7 +424,7 @@ bool Smarty::serverConnect(IPAddress _server, uint16_t _port) {
 	if ( _server == IPAddress(0,0,0,0) ) {
 		jsonDoc["header"] = (uint8_t)WHERE_IS_SERVER;
 		jsonDoc["mac"] = WiFi.macAddress();
-		jsonDoc["netaddr"] = netaddr;
+		jsonDoc["netaddr"] = netaddr.toString();
 		send(true);
 		return false;
 	}
@@ -471,17 +476,18 @@ void Smarty::messageHandler() {
 		case GIVE_ME_VALUES:
 			sendAllParams();
 			break;
-		case SERVER_HERE:
-			//const char* _ip_str = jsonDoc["serverIP"];
-			//IPAddress _ip = IPAddress::fromString( _ip_str );
-			IPAddress _ip(0,0,0,0);
-			//_ip.fromString( _ip_str );
+		case SERVER_HERE: {
+			const char* _ip_str = jsonDoc["serverIP"];
+			IPAddress _ip;
+			_ip.fromString( _ip_str );
 			conn_data.serverIP[0] = _ip[0];
 			conn_data.serverIP[1] = _ip[1];
 			conn_data.serverIP[2] = _ip[2];
 			conn_data.serverIP[3] = _ip[3];
 			break;
+		}
 		default:
 			break;
 	}
+	jsonDoc.clear();
 }
