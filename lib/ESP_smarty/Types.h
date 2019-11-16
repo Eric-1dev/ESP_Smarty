@@ -29,6 +29,7 @@ typedef struct {
 } conn_data_t;
 
 typedef struct {
+  uint8_t gotIP;
   uint8_t hardcoded_data : 1;         // Hardcoded connection data (ssid, password, server IP, port)
   uint8_t getConnDataMode : 1;        // In this mode ESP tries to get new connection data from ESP-BASE
   uint8_t triesleft : 5;

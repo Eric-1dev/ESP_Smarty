@@ -14,6 +14,7 @@ Smarty::Smarty(String _name, String _desc)
 	desc = _desc;
 	conn_status.getConnDataMode = false;
 	conn_status.triesleft = WIFI_RECONNECT_TRIES;
+	conn_status.gotIP = false;
 
 	WiFi.hostname(name);
 	if ( strcmp(name.c_str(), ESP_BASE_NAME) != 0 ) {
@@ -73,6 +74,7 @@ void Smarty::onConnect(const WiFiEventStationModeConnected& event) {
 
 void Smarty::onDisconnect(const WiFiEventStationModeDisconnected& event) {
 	conn_status.triesleft--;
+	conn_status.gotIP = false;
 	LOGf("WiFi disconnected ... tries left: %d\n", conn_status.triesleft);
 }
 
@@ -89,7 +91,8 @@ void Smarty::onGotIP(const WiFiEventStationModeGotIP& event) {
 	LOGf("Got NETWORK: %s\n", netaddr.toString().c_str());
 
 	conn_status.triesleft = SERVER_RECONNECT_TRIES;
-	lastDisconnectTime = 0;
+	conn_status.gotIP = true;
+	lastDisconnectTime = 0 - SERVER_RECONNECT_INTERVAL;
 }
 
 /**
@@ -159,7 +162,7 @@ void Smarty::checkConnection() {
 			WiFi.begin(conn_data.ssid, conn_data.pass);
 		}
 	}
-	if ( WiFi.status() == WL_CONNECTED && WiFi.localIP() ) {
+	if ( WiFi.status() == WL_CONNECTED && conn_status.gotIP ) {
 		if ( !conn_status.getConnDataMode )
 			ArduinoOTA.handle();
 		// Check UDP messages
@@ -386,7 +389,7 @@ void Smarty::sendAllParams() {
 }
 
 bool Smarty::checkTCP() {
-	if ( WiFi.status() == WL_CONNECTED && WiFi.localIP() ) {
+	if ( WiFi.status() == WL_CONNECTED && conn_status.gotIP ) {
 		if ( conn_status.getConnDataMode ) {
 			if ( serverConnect(IPAddress(ESP_SERVER_IP), ESP_SERVER_PORT) )
 				askConnData();
@@ -410,7 +413,7 @@ bool Smarty::checkTCP() {
 				conn_status.getConnDataMode = false;
 				conn_status.triesleft = 1;
 			}
-			lastDisconnectTime = 0;
+			lastDisconnectTime = 0 - SERVER_RECONNECT_INTERVAL;
 			WiFi.disconnect();
 		}
 		else {
@@ -484,6 +487,7 @@ void Smarty::messageHandler() {
 			conn_data.serverIP[1] = _ip[1];
 			conn_data.serverIP[2] = _ip[2];
 			conn_data.serverIP[3] = _ip[3];
+			lastDisconnectTime = 0 - SERVER_RECONNECT_INTERVAL;
 			break;
 		}
 		default:
