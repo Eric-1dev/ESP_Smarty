@@ -165,7 +165,8 @@ void Smarty::checkConnection() {
 	if ( WiFi.status() == WL_CONNECTED && conn_status.gotIP ) {
 		if ( !conn_status.getConnDataMode )
 			ArduinoOTA.handle();
-		// Check UDP messages
+
+			// Check UDP messages
 		int packetSize = Udp.parsePacket();
 		if (packetSize) {
 			IPAddress remoteIp = Udp.remoteIP();
@@ -175,20 +176,13 @@ void Smarty::checkConnection() {
 				char _buf[BUF_SIZE];
 				serializeJsonPretty(jsonDoc, _buf);
 				LOGf("Message received over UDP. Size %d from %s, port %d\n", packetSize, remoteIp.toString().c_str(), Udp.remotePort());
-				LOGf("\tContents\n%s\n", _buf );
+				LOGf("\tContents:\n%s\n", _buf );
 				LOGln(_buf);
 #endif
 				messageHandler();
 			}
-
-			/*int len = Udp.read(_buf, sizeof(_buf)-1);
-			if (len > 0) {
-				_buf[len] = '\0';
-			}
-			LOGf("Received packet of size %d from %s, port %d\n\tContents: ", packetSize, remoteIp.toString().c_str(), Udp.remotePort());
-			LOGln(_buf);*/
 		}
-		/////////////////////
+			/////////////////////
 	}
 
 	if ( !client.connected() ) {
