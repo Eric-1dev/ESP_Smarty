@@ -10,6 +10,7 @@ enum headers : uint8_t {
   MY_PARAMS,                    // List of existing parameters (one by one)
   NEW_VALUE,                    // On value change
   GIVE_ME_DATA,                 // Client asking WiFi data from ESP-BASE
+  TAKE_CONN_DATA,               // ESP_BASE tell new connection data to client
   SERVER_HERE,                  // Server answer on WHERE_IS_SERVER
   SET_VALUE                     // Server sending new TARGET VALUE
 };

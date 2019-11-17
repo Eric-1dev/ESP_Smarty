@@ -292,8 +292,14 @@ bool Smarty::checkTCP() {
 		else {
 			if ( millis() - lastDisconnectTime > SERVER_RECONNECT_INTERVAL ) {
 				lastDisconnectTime = millis();
-				if ( serverConnect(IPAddress(conn_data.serverIP), conn_data.port) )
+				if ( serverConnect(IPAddress(conn_data.serverIP), conn_data.port) ) {
+					if ( conn_status.newDataTestMode ) {
+						LOGln("Writing new connection data to EEPROM");
+						EEPROM_write(&conn_data);
+					}
+					conn_status.newDataTestMode = false;
 					sendFullInfo();
+				}
 			}
 		}
 	}

@@ -125,14 +125,35 @@ void Smarty::messageHandler() {
 			sendAllParams();
 			break;
 		case SERVER_HERE: {
-			const char* _ip_str = jsonDoc["serverIP"];
 			IPAddress _ip;
-			_ip.fromString( _ip_str );
+			_ip.fromString( (const char*)jsonDoc["serverIP"] );
 			conn_data.serverIP[0] = _ip[0];
 			conn_data.serverIP[1] = _ip[1];
 			conn_data.serverIP[2] = _ip[2];
 			conn_data.serverIP[3] = _ip[3];
 			lastDisconnectTime = 0 - SERVER_RECONNECT_INTERVAL;
+			break;
+		}
+		case GIVE_ME_DATA:
+			if ( isESPBase ) {
+				jsonDoc["ssid"] = String(conn_data.ssid);
+				jsonDoc["pass"] = String(conn_data.pass);
+				jsonDoc["serverIP"] = IPAddress(conn_data.serverIP).toString();
+				jsonDoc["port"] = conn_data.port;
+			}
+			break;
+		case TAKE_CONN_DATA: {
+			//const char* _ip_str = jsonDoc["serverIP"];
+			IPAddress _ip;
+			_ip.fromString( (const char*)jsonDoc["serverIP"] );
+			strcpy(conn_data.ssid, jsonDoc["ssid"]);
+			strcpy(conn_data.pass, jsonDoc["pass"]);
+			conn_data.serverIP[0] = _ip[0];
+			conn_data.serverIP[1] = _ip[1];
+			conn_data.serverIP[2] = _ip[2];
+			conn_data.serverIP[3] = _ip[3];
+			conn_data.port = jsonDoc["port"];
+			conn_status.newDataTestMode = true;
 			break;
 		}
 		default:
