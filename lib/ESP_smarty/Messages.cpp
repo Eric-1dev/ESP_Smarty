@@ -102,8 +102,7 @@ void Smarty::sendParam(uint8_t _num) {
 }
 
 void Smarty::sendAllParams() {
-	uint8_t i;
-	for ( i = 0; i < params.size(); i++ )
+	for ( uint8_t i = 0; i < params.size(); i++ )
 		sendParam(i);
 }
 
@@ -139,5 +138,4 @@ void Smarty::messageHandler() {
 		default:
 			break;
 	}
-	jsonDoc.clear();
 }
