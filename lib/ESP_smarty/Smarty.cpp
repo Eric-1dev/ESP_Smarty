@@ -328,7 +328,6 @@ bool Smarty::serverConnect(IPAddress _server, uint16_t _port) {
 	if ( _server == IPAddress(0,0,0,0) ) {
 		jsonDoc["header"] = (uint8_t)WHERE_IS_SERVER;
 		jsonDoc["mac"] = WiFi.macAddress();
-		jsonDoc["netaddr"] = netaddr.toString();
 		send(true);
 		return false;
 	}
