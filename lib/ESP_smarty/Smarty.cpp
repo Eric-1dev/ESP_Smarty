@@ -15,6 +15,7 @@ Smarty::Smarty(String _name, String _desc)
 	conn_status.getConnDataMode = false;
 	conn_status.triesleft = WIFI_RECONNECT_TRIES;
 	conn_status.gotIP = false;
+	conn_status.newDataTestMode = false;
 
 	WiFi.hostname(name);
 	if ( strcmp(name.c_str(), ESP_BASE_NAME) != 0 ) {
