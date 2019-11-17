@@ -203,45 +203,6 @@ void Smarty::checkConnection() {
 }
 
 /**
- * Send data to server
- * @param mes - message
- * @param broadcast - True - UDP broacast packet. False - TCP packet to current server
- */
-bool Smarty::send(bool broadcast) {
-#ifdef DEBUG
-	char _buf[BUF_SIZE];	// buffer for network message
-	_buf[serializeJsonPretty(jsonDoc, _buf)] = '\0';
-#endif
-
-	if ( broadcast ) {
-		LOGf("Sending broadcast message: %s ...", _buf);
-		Udp.beginPacket(bcastAddr, conn_data.port);
-		serializeJsonPretty(jsonDoc, Udp);
-		Udp.endPacket();
-		jsonDoc.clear();
-		LOGln("Success");
-		return true;
-	}
-	else {
-		LOGf("Sending message to server: %s ... ", _buf);
-		if ( client.connected() ) {
-			if ( serializeJsonPretty(jsonDoc, client) ) {
-				client.write('\0');
-				jsonDoc.clear();
-				LOGln("Success");
-				return true;
-			}
-		}
-		else {
-			LOG("not connected to server ... ");
-		}
-	}
-	jsonDoc.clear();
-	LOGln("Failed");
-	return false;
-}
-
-/**
  * Add new parameter of our ESP
  * @param _type - can be SWITCH, RGB, NUMBER or NONE
  * @param _desc - a brief description of what the parameter is for
@@ -295,30 +256,6 @@ void Smarty::addParam(paramType_t _type, \
 }
 
 /**
- * Received new target value from server
- * @param _num - number of parameter
- * @param _value - new target value
- */
-bool Smarty::receivedVal(uint8_t _num, param_value_t _value) {
-	if ( _num < params.size() ) {
-		if ( params[_num].targetValue != _value ) {
-			if ( _value > params[_num].maxValue || _value < params[_num].minValue ) {
-				LOGln("Parameter value out of range");
-				return false;
-			}
-			if ( params[_num].remember_target ) {
-				/* Write in EEPROM */
-			}
-			params[_num].targetValue = _value;
-			params[_num].callback(_value);
-		}
-		return true;
-	}
-	LOGln("Parameter not exist");
-	return false;
-}
-
-/**
  * Return target value of current parameter
  * @param _num number of parameter
  * @return {param_value_t} target value
@@ -343,50 +280,6 @@ bool Smarty::setValue(uint8_t _num, param_value_t _value) {
 	}
 	LOGln("Parameter not exist");
 	return false;
-}
-
-void Smarty::sendFullInfo() {
-	uint8_t i;
-
-	jsonDoc["header"] = (uint8_t)MY_NAME;
-	jsonDoc["mac"] = WiFi.macAddress();
-	jsonDoc["name"] = name;
-	jsonDoc["desc"] = desc;
-	send();
-
-	for ( i = 0; i < params.size(); i++ ) {
-		jsonDoc["header"] = (uint8_t)MY_PARAMS;
-		jsonDoc["mac"] = WiFi.macAddress();
-		jsonDoc["num"] = params[i].num;
-		jsonDoc["desc"] = params[i].desc;
-		jsonDoc["type"] = params[i].type;
-		jsonDoc["curValue"] = params[i].curValue;
-		jsonDoc["targetValue"] = params[i].targetValue;
-		jsonDoc["minValue"] = params[i].minValue;
-		jsonDoc["maxValue"] = params[i].maxValue;
-		jsonDoc["divisor"] = params[i].divisor;
-		send();
-	}
-}
-
-/**
- * Send current parameter value to server
- * @param _num - number of parameter
- */
-void Smarty::sendParam(uint8_t _num) {
-	if ( conn_status.getConnDataMode )
-		return;
-	jsonDoc["header"] = (uint8_t)NEW_VALUE;
-	jsonDoc["mac"] = WiFi.macAddress();
-	jsonDoc["num"] = _num;
-	jsonDoc["value"] = params[_num].curValue;
-	send();
-}
-
-void Smarty::sendAllParams() {
-	uint8_t i;
-	for ( i = 0; i < params.size(); i++ )
-		sendParam(i);
 }
 
 bool Smarty::checkTCP() {
@@ -446,13 +339,6 @@ bool Smarty::serverConnect(IPAddress _server, uint16_t _port) {
 	return false;
 }
 
-void Smarty::askConnData() {
-	LOGln("Asking new WiFi & Server data");
-	jsonDoc["header"] = (uint8_t)GIVE_ME_DATA;
-	jsonDoc["mac"] = WiFi.macAddress();
-	send();
-}
-
 char* Smarty::getSSID() {
 	return conn_data.ssid;
 }
@@ -467,32 +353,4 @@ IPAddress Smarty::getServerIP() {
 
 uint16_t Smarty::getPort() {
 	return conn_data.port;
-}
-
-void Smarty::messageHandler() {
-	switch ( (uint8_t)jsonDoc["header"] ) {
-		case MY_NAME:
-			LOGln("What?");
-			break;
-		case SET_VALUE:
-			receivedVal(jsonDoc["num"], jsonDoc["targetValue"]);
-			break;
-		case GIVE_ME_VALUES:
-			sendAllParams();
-			break;
-		case SERVER_HERE: {
-			const char* _ip_str = jsonDoc["serverIP"];
-			IPAddress _ip;
-			_ip.fromString( _ip_str );
-			conn_data.serverIP[0] = _ip[0];
-			conn_data.serverIP[1] = _ip[1];
-			conn_data.serverIP[2] = _ip[2];
-			conn_data.serverIP[3] = _ip[3];
-			lastDisconnectTime = 0 - SERVER_RECONNECT_INTERVAL;
-			break;
-		}
-		default:
-			break;
-	}
-	jsonDoc.clear();
 }
