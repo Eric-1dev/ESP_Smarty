@@ -44,7 +44,7 @@ typedef struct {
     char desc[128];
     uint8_t type;
     param_value_t curValue;
-    bool remember_target;
+    uint8_t remember_target;
     param_value_t targetValue;
     param_value_t minValue;
     param_value_t maxValue;

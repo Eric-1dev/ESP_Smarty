@@ -246,9 +246,11 @@ void Smarty::addParam(paramType_t _type, \
 			new_param->divisor = _divisor;
 			break;
 	}
-	new_param->remember_target = _rem_target;
 	if ( _rem_target )
-		numRemValues++;
+		new_param->remember_target = numRemValues++;
+	else
+		new_param->remember_target = 0;
+
 	new_param->callback = _callback;
 
 	params.push_back(*new_param);
