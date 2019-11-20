@@ -5,7 +5,7 @@
 #include <EEPROM.h>
 #include <ArduinoOTA.h>
 #include <ArduinoJson.h>
-#include "Types.h"
+#include "Types_esp.h"
 #include "config.h"
 
 #ifdef DEBUG
