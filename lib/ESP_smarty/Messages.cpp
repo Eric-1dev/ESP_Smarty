@@ -44,7 +44,7 @@ bool Smarty::send(bool broadcast) {
  * @param _num - number of parameter
  * @param _value - new target value
  */
-bool Smarty::receivedVal(uint8_t _num, param_value_t _value) {
+bool Smarty::setTargetVal(uint8_t _num, param_value_t _value) {
 	if ( _num < params.size() ) {
 		if ( params[_num].targetValue != _value ) {
 			if ( _value > params[_num].maxValue || _value < params[_num].minValue ) {
@@ -119,7 +119,7 @@ void Smarty::messageHandler() {
 			LOGln("What?");
 			break;
 		case SET_VALUE:
-			receivedVal(jsonDoc["num"], jsonDoc["targetValue"]);
+			setTargetVal(jsonDoc["num"], jsonDoc["targetValue"]);
 			break;
 		case GIVE_ME_VALUES:
 			sendAllParams();

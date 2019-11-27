@@ -35,6 +35,7 @@ class Smarty
 					  void (*_callback)(param_value_t) = NULL, \
 					  int8_t _divisor = 1);
 		param_value_t getTargetVal(uint8_t _num);
+		bool setTargetVal(uint8_t _num, param_value_t _value);
 		bool setValue(uint8_t _num, param_value_t _value);
 		void EEPROM_write(conn_data_t*);
 		char* getSSID();
@@ -67,7 +68,6 @@ class Smarty
 		void onDisconnect(const WiFiEventStationModeDisconnected&);
 		void onGotIP(const WiFiEventStationModeGotIP&);
 		bool send(bool broadcast = false);
-		bool receivedVal(uint8_t _num, param_value_t _value);
 		void sendFullInfo();
 		void sendParam(uint8_t _num);
 		void sendAllParams();
