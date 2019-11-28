@@ -3,8 +3,8 @@
 #include "ESPiLight.h"
 
 #define RED_PIN       D4
-#define GREEN_PIN     D2
-#define BLUE_PIN      D3
+#define GREEN_PIN     D3
+#define BLUE_PIN      D2
 #define WHITE_PIN     D1
 #define RCV433        D5
 #define LIGHT_SENSOR  A0
@@ -15,13 +15,14 @@ void rgb_blink(void);
 void tick(void);
 void white_event(param_value_t);
 void rgb_event(param_value_t);
-ICACHE_RAM_ATTR void ir_activity();
 
 void rfCallback(const String &protocol, const String &message, int status, size_t repeats, const String &deviceID);
 
 ESPiLight rf(-1);
 Ticker timer;
+uint8_t whiteTimerPeriod = 2;
 uint32_t lastIRact = 0;
+uint16_t adc_val;
 bool rgb_auto = false;
 bool manualMode = false;
 int16_t targetW = 0;
@@ -52,11 +53,9 @@ void setup (void) {
   digitalWrite(GREEN_PIN, HIGH);
   digitalWrite(BLUE_PIN, HIGH);
   
-  attachInterrupt(IR_SENSOR, ir_activity, RISING);
-  
-  analogWriteFreq(30000);
+  analogWriteFreq(300);
 
-  timer.attach_ms(1, tick);
+  timer.attach_ms(whiteTimerPeriod, tick);
 
   rf.setCallback(rfCallback);
   rf.initReceiver(RCV433);
@@ -71,8 +70,33 @@ void loop (void) {
 
   rf.loop();
 
-  if ( millis() - lastIRact > 30000 )
-    targetW = 0;
+  if ( !manualMode ) {
+    if ( whiteTimerPeriod != 50 ) {
+      whiteTimerPeriod = 50;
+      timer.detach();
+      timer.attach_ms(whiteTimerPeriod, tick);
+    }
+
+    adc_val = analogRead(LIGHT_SENSOR);
+    if ( adc_val < 200 ) {
+      if ( digitalRead(IR_SENSOR) ) {
+        lastIRact = millis();
+        targetW = 80;
+      }
+      else if ( millis() - lastIRact > 30000 )
+        targetW = 0;
+    }
+    else {
+      targetW = 0;
+    }
+  }
+  else {
+    if ( whiteTimerPeriod != 2 ) {
+      whiteTimerPeriod = 2;
+      timer.detach();
+      timer.attach_ms(whiteTimerPeriod, tick);
+    }
+  }
 
   delay(10);
   yield();
@@ -82,25 +106,14 @@ void aWrite(uint8_t _pin, int16_t _val) {
   analogWrite(_pin, pow(1023-_val,2)/1023);
 }
 
-void ir_activity() {
-  if ( !manualMode ) {
-    uint16_t adc_val = analogRead(LIGHT_SENSOR);
-    if ( adc_val < 200 ) {
-      lastIRact = millis();
-      targetW = 160;
-      Serial.printf("----------------------Light ON (ADC val = %d)---------------------\n", adc_val);
-    }
-  }
-}
-
 void white_event(param_value_t _val) {
   manualMode = _val;
-  if ( _val )
+  if ( _val ) {
     targetW = 1023;
+  }
   else {
     targetW = 0;
   }
-  
 }
 
 void rgb_event(param_value_t _val) {
