@@ -53,7 +53,7 @@ void setup (void) {
   digitalWrite(GREEN_PIN, HIGH);
   digitalWrite(BLUE_PIN, HIGH);
   
-  analogWriteFreq(300);
+  analogWriteFreq(3000);
 
   timer.attach_ms(whiteTimerPeriod, tick);
 
@@ -71,9 +71,9 @@ void loop (void) {
   rf.loop();
 
   if ( !manualMode ) {
-    if ( whiteTimerPeriod != 50 ) {
-      whiteTimerPeriod = 50;
-      timer.detach();
+    if ( whiteTimerPeriod != 10 ) {
+      whiteTimerPeriod = 10;
+      //timer.detach();
       timer.attach_ms(whiteTimerPeriod, tick);
     }
 
@@ -93,7 +93,7 @@ void loop (void) {
   else {
     if ( whiteTimerPeriod != 2 ) {
       whiteTimerPeriod = 2;
-      timer.detach();
+      //timer.detach();
       timer.attach_ms(whiteTimerPeriod, tick);
     }
   }
