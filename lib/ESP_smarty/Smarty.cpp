@@ -200,6 +200,11 @@ void Smarty::checkConnection() {
 				messageHandler();
 			}
 		}
+		if ( conn_status.getConnDataMode && (millis() - lastDisconnectTime > ESP_SERVER_TIMEOUT) ) {
+			LOGln("No new WiFi data arrived. Trying connect normally.");
+			conn_status.getConnDataMode = false;
+			WiFi.begin(conn_data.ssid, conn_data.pass);
+		}
 	}
 }
 
@@ -288,8 +293,10 @@ bool Smarty::setValue(uint8_t _num, param_value_t _value) {
 bool Smarty::checkTCP() {
 	if ( WiFi.status() == WL_CONNECTED && conn_status.gotIP ) {
 		if ( conn_status.getConnDataMode ) {
-			if ( serverConnect(IPAddress(ESP_SERVER_IP), ESP_SERVER_PORT) )
+			if ( serverConnect(IPAddress(ESP_SERVER_IP), ESP_SERVER_PORT) ) {
+				lastDisconnectTime = millis();
 				askConnData();
+			}
 		}
 		else {
 			if ( millis() - lastDisconnectTime > SERVER_RECONNECT_INTERVAL ) {

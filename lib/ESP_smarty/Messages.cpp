@@ -143,7 +143,6 @@ void Smarty::messageHandler() {
 			}
 			break;
 		case TAKE_CONN_DATA: {
-			//const char* _ip_str = jsonDoc["serverIP"];
 			IPAddress _ip;
 			_ip.fromString( (const char*)jsonDoc["serverIP"] );
 			strcpy(conn_data.ssid, jsonDoc["ssid"]);
@@ -154,6 +153,8 @@ void Smarty::messageHandler() {
 			conn_data.serverIP[3] = _ip[3];
 			conn_data.port = jsonDoc["port"];
 			conn_status.newDataTestMode = true;
+			conn_status.getConnDataMode = false;
+			WiFi.begin(conn_data.ssid, conn_data.pass);
 			break;
 		}
 		default:
