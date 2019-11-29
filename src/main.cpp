@@ -36,8 +36,7 @@ int16_t curW = 0;
               3333 \
               );
 */
-
-Smarty smarty("Kitchen_light", "Управляет освещением над столешницей и в цоколе кухни.");
+Smarty smarty("Kitchen_light1", "Управляет освещением над столешницей и в цоколе кухни.");
 
 void setup (void) {
   pinMode(LIGHT_SENSOR, INPUT);
@@ -73,7 +72,6 @@ void loop (void) {
   if ( !manualMode ) {
     if ( whiteTimerPeriod != 10 ) {
       whiteTimerPeriod = 10;
-      //timer.detach();
       timer.attach_ms(whiteTimerPeriod, tick);
     }
 
@@ -93,7 +91,6 @@ void loop (void) {
   else {
     if ( whiteTimerPeriod != 2 ) {
       whiteTimerPeriod = 2;
-      //timer.detach();
       timer.attach_ms(whiteTimerPeriod, tick);
     }
   }

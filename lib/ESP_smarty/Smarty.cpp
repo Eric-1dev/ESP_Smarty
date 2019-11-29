@@ -101,7 +101,6 @@ void Smarty::onGotIP(const WiFiEventStationModeGotIP& event) {
  * Run this function after all parameter add
  */
 void Smarty::begin() {
-
 	if ( !conn_status.hardcoded_data || isESPBase )
 		EEPROM_read();
 
