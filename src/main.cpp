@@ -36,7 +36,7 @@ int16_t curW = 0;
               3333 \
               );
 */
-Smarty smarty("Kitchen_light1", "Управляет освещением над столешницей и в цоколе кухни.");
+Smarty smarty("Kitchen_light", "Управляет освещением над столешницей и в цоколе кухни.");
 
 void setup (void) {
   pinMode(LIGHT_SENSOR, INPUT);
