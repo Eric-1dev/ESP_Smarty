@@ -1,6 +1,5 @@
-#include <Ticker.h>
 #include "Smarty.h"
-#include "ESPiLight.h"
+#include <Ticker.h>
 #include <RCSwitch.h>
 
 #define RED_PIN       D4
@@ -23,10 +22,6 @@ void thirdBut();
 
 RCSwitch mySwitch = RCSwitch();
 
-//ESPiLight rf(-1);
-void rfCallback(const String &protocol, const String &message, int status,
-                size_t repeats, const String &deviceID);
-
 Ticker timer;
 uint8_t whiteTimerPeriod = 2;
 uint32_t lastIRact = 0;
@@ -44,7 +39,7 @@ int16_t curW = 0;
               3333 \
               );
 */
-Smarty smarty("Kitchen_light1", "Управляет освещением над столешницей и в цоколе кухни.");
+Smarty smarty("Kitchen_light", "Управляет освещением над столешницей и в цоколе кухни.");
 
 void setup (void) {
   pinMode(LIGHT_SENSOR, INPUT);
@@ -64,8 +59,6 @@ void setup (void) {
 
   timer.attach_ms(whiteTimerPeriod, tick);
 
-  //rf.setCallback(rfCallback);
-  //rf.initReceiver(RCV433);
   mySwitch.enableReceive(RCV433);
   
   smarty.addParam(SWITCH, "Включает подсветку столешницы", 0, 0, false, white_event);
@@ -75,8 +68,6 @@ void setup (void) {
 
 void loop (void) {
   smarty.checkConnection();
-
-  //rf.loop();
 
   if ( !whiteOn ) {
     if ( whiteTimerPeriod != 10 ) {
@@ -123,7 +114,7 @@ void loop (void) {
     mySwitch.resetAvailable();
   }
 
-  delay(1);
+  delay(2);
   yield();
 }
 
@@ -173,32 +164,4 @@ void secondBut() {
 
 void thirdBut() {
   Serial.println("3 Button pressed");
-}
-
-void rfCallback(const String &protocol, const String &message, int status,
-                size_t repeats, const String &deviceID) {
-  Serial.print("RF signal arrived [");
-  Serial.print(protocol);  // protocoll used to parse
-  Serial.print("][");
-  Serial.print(deviceID);  // value of id key in json message
-  Serial.print("] (");
-  Serial.print(status);  // status of message, depending on repeat, either:
-                         // FIRST   - first message of this protocoll within the
-                         //           last 0.5 s
-                         // INVALID - message repeat is not equal to the
-                         //           previous message
-                         // VALID   - message is equal to the previous message
-                         // KNOWN   - repeat of a already valid message
-  Serial.print(") ");
-  Serial.print(message);  // message in json format
-  Serial.println();
-
-  // check if message is valid and process it
-  if (status == VALID) {
-    Serial.print("Valid message: [");
-    Serial.print(protocol);
-    Serial.print("] ");
-    Serial.print(message);
-    Serial.println();
-  }
 }
