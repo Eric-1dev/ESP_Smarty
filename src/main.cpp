@@ -1,6 +1,7 @@
 #include <Ticker.h>
 #include "Smarty.h"
 #include "ESPiLight.h"
+#include <RCSwitch.h>
 
 #define RED_PIN       D4
 #define GREEN_PIN     D3
@@ -16,15 +17,22 @@ void tick(void);
 void white_event(param_value_t);
 void rgb_event(param_value_t);
 
-void rfCallback(const String &protocol, const String &message, int status, size_t repeats, const String &deviceID);
+void firstBut();
+void secondBut();
+void thirdBut();
 
-ESPiLight rf(-1);
+RCSwitch mySwitch = RCSwitch();
+
+//ESPiLight rf(-1);
+void rfCallback(const String &protocol, const String &message, int status,
+                size_t repeats, const String &deviceID);
+
 Ticker timer;
 uint8_t whiteTimerPeriod = 2;
 uint32_t lastIRact = 0;
 uint16_t adc_val;
 bool rgb_auto = false;
-bool manualMode = false;
+bool whiteOn = false;
 int16_t targetW = 0;
 int16_t curW = 0;
 
@@ -36,7 +44,7 @@ int16_t curW = 0;
               3333 \
               );
 */
-Smarty smarty("Kitchen_light", "Управляет освещением над столешницей и в цоколе кухни.");
+Smarty smarty("Kitchen_light1", "Управляет освещением над столешницей и в цоколе кухни.");
 
 void setup (void) {
   pinMode(LIGHT_SENSOR, INPUT);
@@ -56,8 +64,9 @@ void setup (void) {
 
   timer.attach_ms(whiteTimerPeriod, tick);
 
-  rf.setCallback(rfCallback);
-  rf.initReceiver(RCV433);
+  //rf.setCallback(rfCallback);
+  //rf.initReceiver(RCV433);
+  mySwitch.enableReceive(RCV433);
   
   smarty.addParam(SWITCH, "Включает подсветку столешницы", 0, 0, false, white_event);
   smarty.addParam(RGB, "Включает RGB подсветку цоколя", 0, 0, false, rgb_event);
@@ -67,16 +76,16 @@ void setup (void) {
 void loop (void) {
   smarty.checkConnection();
 
-  rf.loop();
+  //rf.loop();
 
-  if ( !manualMode ) {
+  if ( !whiteOn ) {
     if ( whiteTimerPeriod != 10 ) {
       whiteTimerPeriod = 10;
       timer.attach_ms(whiteTimerPeriod, tick);
     }
 
     adc_val = analogRead(LIGHT_SENSOR);
-    if ( adc_val < 200 ) {
+    if ( adc_val < 100 ) {
       if ( digitalRead(IR_SENSOR) ) {
         lastIRact = millis();
         targetW = 80;
@@ -95,7 +104,26 @@ void loop (void) {
     }
   }
 
-  delay(10);
+  if (mySwitch.available()) {
+    if ( mySwitch.getReceivedProtocol() == 1 ) {
+      switch (mySwitch.getReceivedValue()) {
+        case 69105:
+          firstBut();
+          break;
+        case 69106:
+          secondBut();
+          break;
+        case 69108:
+          thirdBut();
+          break;
+        default:
+          break;
+      }
+    }
+    mySwitch.resetAvailable();
+  }
+
+  delay(1);
   yield();
 }
 
@@ -104,7 +132,7 @@ void aWrite(uint8_t _pin, int16_t _val) {
 }
 
 void white_event(param_value_t _val) {
-  manualMode = _val;
+  whiteOn = _val;
   if ( _val ) {
     targetW = 1023;
   }
@@ -128,6 +156,23 @@ void tick(void) {
     curW--;
     
   aWrite(WHITE_PIN, curW);
+}
+
+void firstBut() {
+  Serial.println("1 Button pressed");
+  whiteOn = !whiteOn;
+  if ( whiteOn )
+    targetW = 1023;
+  else
+    targetW = 0;
+}
+
+void secondBut() {
+  Serial.println("2 Button pressed");
+}
+
+void thirdBut() {
+  Serial.println("3 Button pressed");
 }
 
 void rfCallback(const String &protocol, const String &message, int status,
