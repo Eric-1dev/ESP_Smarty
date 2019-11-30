@@ -16,9 +16,7 @@ void tick(void);
 void white_event(param_value_t);
 void rgb_event(param_value_t);
 
-void firstBut();
-void secondBut();
-void thirdBut();
+void butPressed(uint32_t);
 
 RCSwitch mySwitch = RCSwitch();
 
@@ -27,9 +25,10 @@ uint8_t whiteTimerPeriod = 2;
 uint32_t lastIRact = 0;
 uint16_t adc_val;
 bool rgb_auto = false;
-bool whiteOn = false;
+bool whiteManualMode = false;
 int16_t targetW = 0;
 int16_t curW = 0;
+uint32_t but1_time = 0, but2_time = 0, but3_time = 0;
 
 /*Smarty smarty("Kitchen_light", \
               "Управляет освещением над столешницей и в цоколе кухни.", \
@@ -69,7 +68,7 @@ void setup (void) {
 void loop (void) {
   smarty.checkConnection();
 
-  if ( !whiteOn ) {
+  if ( !whiteManualMode ) {
     if ( whiteTimerPeriod != 10 ) {
       whiteTimerPeriod = 10;
       timer.attach_ms(whiteTimerPeriod, tick);
@@ -95,26 +94,16 @@ void loop (void) {
     }
   }
 
+  if ( curW == 0 && whiteManualMode )
+    whiteManualMode = 0;
+
   if (mySwitch.available()) {
-    if ( mySwitch.getReceivedProtocol() == 1 ) {
-      switch (mySwitch.getReceivedValue()) {
-        case 69105:
-          firstBut();
-          break;
-        case 69106:
-          secondBut();
-          break;
-        case 69108:
-          thirdBut();
-          break;
-        default:
-          break;
-      }
-    }
+    if ( mySwitch.getReceivedProtocol() == 1 )
+      butPressed(mySwitch.getReceivedValue());
     mySwitch.resetAvailable();
   }
 
-  delay(2);
+  delay(10);
   yield();
 }
 
@@ -123,7 +112,7 @@ void aWrite(uint8_t _pin, int16_t _val) {
 }
 
 void white_event(param_value_t _val) {
-  whiteOn = _val;
+  whiteManualMode = _val;
   if ( _val ) {
     targetW = 1023;
   }
@@ -149,19 +138,23 @@ void tick(void) {
   aWrite(WHITE_PIN, curW);
 }
 
-void firstBut() {
-  Serial.println("1 Button pressed");
-  whiteOn = !whiteOn;
-  if ( whiteOn )
-    targetW = 1023;
-  else
-    targetW = 0;
-}
-
-void secondBut() {
-  Serial.println("2 Button pressed");
-}
-
-void thirdBut() {
-  Serial.println("3 Button pressed");
+void butPressed(uint32_t _but) {
+  switch (_but) {
+    case 69105:       // Button 1
+      if ( millis() - but1_time > 500 ) {
+        but1_time = millis();
+        whiteManualMode = true;
+        if ( whiteManualMode )
+          targetW = 1023;
+        else
+          targetW = 0;
+      }
+      break;
+    case 69106:       // Button 2
+      break;
+    case 69108:       // Button 3
+      break;
+    default:
+      break;
+  }
 }
