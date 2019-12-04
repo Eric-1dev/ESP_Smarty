@@ -37,6 +37,7 @@ uint32_t lastIRact = 0;
 uint16_t adc_val;
 uint8_t rgb_mode = 0;
 bool whiteManualMode = false;
+bool singleFlag = false;
 int16_t targetW = 0;
 int16_t targetR = 0;
 int16_t targetG = 0;
@@ -47,15 +48,15 @@ int16_t curG = 0;
 int16_t curB = 0;
 uint32_t but1_time = 0, but2_time = 0, but3_time = 0;
 
-/*Smarty smarty("Kitchen_light", \
+Smarty smarty("Kitchen_light1", \
                 "Управляет освещением над столешницей и в цоколе кухни.", \
                 "Eric's AP 2.4G", \
                 "19881989", \
                 IPAddress(192, 168, 1, 162), \
                 3333 \
                 );
-*/
-Smarty smarty("Kitchen_light", "Управляет освещением над столешницей и в цоколе кухни.");
+
+//Smarty smarty("Kitchen_light", "Управляет освещением над столешницей и в цоколе кухни.");
 
 void setup (void) {
   pinMode(LIGHT_SENSOR, INPUT);
@@ -93,7 +94,8 @@ void loop (void) {
 
     adc_val = analogRead(LIGHT_SENSOR);
     if ( adc_val < 100 && !rgb_mode ) {
-      if ( digitalRead(IR_SENSOR) ) {
+      if ( digitalRead(IR_SENSOR) || singleFlag ) {
+        singleFlag = false;
         lastIRact = millis();
         targetW = LOW_WHITE;
       }
@@ -105,8 +107,8 @@ void loop (void) {
     }
   }
   else {
-    if ( whiteTimerPeriod != 2 ) {
-      whiteTimerPeriod = 2;
+    if ( whiteTimerPeriod != 1 ) {
+      whiteTimerPeriod = 1;
       white_timer.attach_ms(whiteTimerPeriod, white_tick);
     }
   }
@@ -218,7 +220,7 @@ void butPressed(uint32_t _but) {
         switch (rgb_mode) {
           case 0:
             rgbSetColor(0, 0, 0);
-            lastIRact = millis();
+            singleFlag = true;
             break;
           case 1:
             rgb_timer.attach_ms(8, rgb_tick);
@@ -249,7 +251,7 @@ void butPressed(uint32_t _but) {
         but3_time = millis();
         rgb_mode = 0;
         rgbSetColor(0, 0, 0);
-        lastIRact = millis();
+        singleFlag = true;
       }
       break;
     default:

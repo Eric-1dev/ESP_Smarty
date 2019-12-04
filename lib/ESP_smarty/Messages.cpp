@@ -23,15 +23,17 @@ bool Smarty::send(bool broadcast) {
 	else {
 		LOGf("Sending message to server: %s ... ", _buf);
 		if ( client.connected() ) {
+			LOGf("message size = %d bytes... ", (uint16_t)measureJsonPretty(jsonDoc));
+			uint16_t len = measureJsonPretty(jsonDoc);
+			client.write((uint8_t *)&len, 2);
 			if ( serializeJsonPretty(jsonDoc, client) ) {
-				client.write('\0');
 				jsonDoc.clear();
-				LOGln("Success");
+				LOGln("Success\n");
 				return true;
 			}
 		}
 		else {
-			LOG("not connected to server ... ");
+			LOGln("not connected to server ...");
 		}
 	}
 	jsonDoc.clear();
